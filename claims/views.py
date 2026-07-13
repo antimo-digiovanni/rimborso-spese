@@ -33,32 +33,32 @@ def home(request):
 
 
 def manifest(request):
-        body = {
-                'name': 'Expense Hub',
-                'short_name': 'Expense Hub',
-                'description': 'Rimborsi spese per dipendenti, installabile da mobile.',
-                'start_url': '/',
-                'scope': '/',
-                'display': 'standalone',
-                'background_color': '#f6f1e8',
-                'theme_color': '#0b6e4f',
-                'icons': [
-                        {
-                                'src': static('claims/icons/icon-192.svg'),
-                                'sizes': '192x192',
-                                'type': 'image/svg+xml',
-                            'background_color': '#f5f8ff',
-                            'theme_color': '#1d4ed8',
-                        {
-                                'src': static('claims/icons/icon-512.svg'),
-                                'sizes': '512x512',
-                                'type': 'image/svg+xml',
-                                'purpose': 'any maskable',
-                        },
-                ],
-        }
-        import json
-        return HttpResponse(json.dumps(body), content_type='application/manifest+json')
+    body = {
+        'name': 'Expense Hub',
+        'short_name': 'Expense Hub',
+        'description': 'Rimborsi spese per dipendenti, installabile da mobile.',
+        'start_url': '/',
+        'scope': '/',
+        'display': 'standalone',
+        'background_color': '#f5f8ff',
+        'theme_color': '#1d4ed8',
+        'icons': [
+            {
+                'src': static('claims/icons/icon-192.svg'),
+                'sizes': '192x192',
+                'type': 'image/svg+xml',
+                'purpose': 'any maskable',
+            },
+            {
+                'src': static('claims/icons/icon-512.svg'),
+                'sizes': '512x512',
+                'type': 'image/svg+xml',
+                'purpose': 'any maskable',
+            },
+        ],
+    }
+    import json
+    return HttpResponse(json.dumps(body), content_type='application/manifest+json')
 
 
 def service_worker(request):
