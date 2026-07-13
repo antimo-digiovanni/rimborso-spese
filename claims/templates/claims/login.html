@@ -9,6 +9,9 @@
         <h1>Accedi al tuo spazio</h1>
         <p class="hero-copy">Rientra nella tua area personale e continua a gestire rimborsi, ricevute e stato delle richieste.</p>
     </div>
+    {% if request.GET.registered == '1' %}
+    <div class="panel-note">Account creato. Accedi per iniziare a usare Rimborso spese.</div>
+    {% endif %}
     <form method="post" class="stack-lg">
         {% csrf_token %}
         {% for field in form %}

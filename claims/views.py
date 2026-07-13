@@ -1,7 +1,6 @@
 import logging
 
 from django.contrib import messages
-from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import ValidationError
@@ -128,16 +127,7 @@ def register(request):
                     logger.exception('Registration failed during save flow.')
                     form.add_error(None, 'Non siamo riusciti a completare la registrazione. Riprova tra poco.')
                 else:
-                    try:
-                        login(request, user)
-                        if profile.is_company_admin:
-                            messages.success(request, 'Account creato. Abbiamo aperto il tuo spazio aziendale di prova: ora puoi iniziare subito.')
-                        else:
-                            messages.success(request, 'Account creato. Ora puoi inserire la tua prima richiesta di rimborso.')
-                        return redirect('dashboard')
-                    except Exception:
-                        logger.exception('Registration failed after account creation.')
-                        form.add_error(None, 'Account creato ma accesso automatico non disponibile. Prova ad accedere manualmente.')
+                    return redirect(f"/accedi/?registered=1")
         except Exception:
             logger.exception('Registration failed during form validation.')
             form.add_error(None, 'Non siamo riusciti a completare la registrazione. Riprova tra poco.')

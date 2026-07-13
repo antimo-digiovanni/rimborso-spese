@@ -20,7 +20,7 @@ class RegistrationFlowTests(TestCase):
             'password2': 'SecurePass123!',
         })
 
-        self.assertRedirects(response, reverse('dashboard'))
+        self.assertRedirects(response, f"{reverse('login')}?registered=1")
         user = User.objects.get(username='luca@example.com')
         profile = EmployeeProfile.objects.get(user=user)
         self.assertEqual(profile.company.name, 'Acme Logistics')
@@ -37,7 +37,7 @@ class RegistrationFlowTests(TestCase):
             'password2': 'SecurePass123!',
         })
 
-        self.assertRedirects(response, reverse('dashboard'))
+        self.assertRedirects(response, f"{reverse('login')}?registered=1")
         profile = EmployeeProfile.objects.get(user__username='sara@example.com')
         self.assertEqual(profile.company, company)
         self.assertFalse(profile.is_company_admin)
