@@ -3,6 +3,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.http import HttpResponse
+from django.db import DatabaseError
 from django.db.models import Count, DecimalField, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
@@ -24,9 +25,17 @@ def home(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
 
+    company_count = 0
+    claim_count = 0
+    try:
+        company_count = Company.objects.filter(is_active=True).count()
+        claim_count = ExpenseClaim.objects.count()
+    except DatabaseError:
+        pass
+
     context = {
-        'company_count': Company.objects.filter(is_active=True).count(),
-        'claim_count': ExpenseClaim.objects.count(),
+        'company_count': company_count,
+        'claim_count': claim_count,
     }
     return render(request, 'claims/home.html', context)
 
