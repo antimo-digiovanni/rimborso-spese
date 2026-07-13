@@ -56,6 +56,20 @@ class RegistrationFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Registrazione temporaneamente non disponibile.')
 
+    def test_register_shows_generic_error_when_unexpected_exception_occurs(self):
+        with patch('claims.views.EmployeeRegistrationForm.save', side_effect=RuntimeError('boom')):
+            response = self.client.post(reverse('register'), {
+                'company_name': 'Acme Logistics',
+                'first_name': 'Luca',
+                'last_name': 'Bianchi',
+                'email': 'luca3@example.com',
+                'password1': 'SecurePass123!',
+                'password2': 'SecurePass123!',
+            })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Non siamo riusciti a completare la registrazione. Riprova tra poco.')
+
     def test_email_check_is_case_insensitive(self):
         User.objects.create_user(username='Luca@Example.com', password='SecurePass123!', email='Luca@Example.com')
 

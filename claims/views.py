@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -12,6 +14,9 @@ from django.utils import timezone
 
 from .forms import ClaimReviewForm, EmployeeRegistrationForm, ExpenseClaimForm
 from .models import Company, EmployeeProfile, ExpenseClaim
+
+
+logger = logging.getLogger(__name__)
 
 
 class EmployeeLoginView(LoginView):
@@ -118,13 +123,20 @@ def register(request):
                 user, profile = form.save()
             except ValidationError as exc:
                 form.add_error(None, exc)
+            except Exception:
+                logger.exception('Registration failed during save flow.')
+                form.add_error(None, 'Non siamo riusciti a completare la registrazione. Riprova tra poco.')
             else:
-                login(request, user)
-                if profile.is_company_admin:
-                    messages.success(request, 'Account creato. Abbiamo aperto il tuo spazio aziendale di prova: ora puoi iniziare subito.')
-                else:
-                    messages.success(request, 'Account creato. Ora puoi inserire la tua prima richiesta di rimborso.')
-                return redirect('dashboard')
+                try:
+                    login(request, user)
+                    if profile.is_company_admin:
+                        messages.success(request, 'Account creato. Abbiamo aperto il tuo spazio aziendale di prova: ora puoi iniziare subito.')
+                    else:
+                        messages.success(request, 'Account creato. Ora puoi inserire la tua prima richiesta di rimborso.')
+                    return redirect('dashboard')
+                except Exception:
+                    logger.exception('Registration failed after account creation.')
+                    form.add_error(None, 'Account creato ma accesso automatico non disponibile. Prova ad accedere manualmente.')
     else:
         form = EmployeeRegistrationForm()
 
