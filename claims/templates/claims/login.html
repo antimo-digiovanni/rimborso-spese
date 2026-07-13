@@ -7,6 +7,7 @@
     <div>
         <p class="eyebrow">Accesso</p>
         <h1>Accedi al tuo spazio</h1>
+        <p class="hero-copy">Rientra nella tua area personale e continua a gestire rimborsi, ricevute e stato delle richieste.</p>
     </div>
     <form method="post" class="stack-lg">
         {% csrf_token %}
@@ -20,5 +21,9 @@
         {% for error in form.non_field_errors %}<div class="error">{{ error }}</div>{% endfor %}
         <button class="button" type="submit">Accedi</button>
     </form>
+    <div class="auth-helper">
+        Non hai ancora aperto il tuo spazio?
+        <a href="{% url 'register' %}">Registrati come dipendente</a>
+    </div>
 </section>
 {% endblock %}
