@@ -256,11 +256,26 @@ def _claim_report_label(month_value):
 
 def _draw_pdf_row(pdf, y_pos, left_text, right_text, width):
     pdf.setFont('Helvetica', 11)
-    pdf.setFillColor(colors.whitesmoke)
+    pdf.setFillColor(colors.HexColor('#16384d'))
     pdf.drawString(18 * mm, y_pos, left_text)
     right_width = stringWidth(right_text, 'Helvetica-Bold', 11)
     pdf.setFont('Helvetica-Bold', 11)
     pdf.drawString(width - 18 * mm - right_width, y_pos, right_text)
+
+
+def _draw_pdf_header(pdf, width, height, profile, month_value, total_amount):
+    pdf.setFillColor(colors.HexColor('#0b3654'))
+    pdf.rect(0, height - 34 * mm, width, 34 * mm, fill=1, stroke=0)
+    pdf.setFillColor(colors.white)
+    pdf.setFont('Helvetica-Bold', 18)
+    pdf.drawString(18 * mm, height - 20 * mm, 'Report rimborsi spese')
+    pdf.setFont('Helvetica', 10)
+    pdf.drawString(18 * mm, height - 27 * mm, f'Dipendente: {profile.user.get_full_name().strip() or profile.user.username}')
+    pdf.drawString(108 * mm, height - 27 * mm, f'Azienda: {profile.company.name}')
+    pdf.setFillColor(colors.HexColor('#16384d'))
+    pdf.setFont('Helvetica-Bold', 12)
+    pdf.drawString(18 * mm, height - 42 * mm, f'Periodo: {_claim_report_label(month_value)}')
+    pdf.drawRightString(width - 18 * mm, height - 42 * mm, f'Totale: {total_amount:.2f} EUR')
 
 
 @login_required
@@ -291,35 +306,24 @@ def claim_pdf_report(request):
     y_pos = height - 22 * mm
 
     pdf.setTitle('Rimborso spese')
-    pdf.setFillColor(colors.HexColor('#0b3654'))
-    pdf.rect(0, height - 34 * mm, width, 34 * mm, fill=1, stroke=0)
-    pdf.setFillColor(colors.white)
-    pdf.setFont('Helvetica-Bold', 18)
-    pdf.drawString(18 * mm, height - 20 * mm, 'Report rimborsi spese')
-    pdf.setFont('Helvetica', 10)
-    pdf.drawString(18 * mm, height - 27 * mm, f'Dipendente: {profile.user.get_full_name().strip() or profile.user.username}')
-    pdf.drawString(108 * mm, height - 27 * mm, f'Azienda: {profile.company.name}')
-
-    y_pos -= 26 * mm
-    pdf.setFillColor(colors.HexColor('#dfeff2'))
-    pdf.setFont('Helvetica-Bold', 12)
-    pdf.drawString(18 * mm, y_pos, f'Periodo: {_claim_report_label(month_value)}')
-    pdf.drawRightString(width - 18 * mm, y_pos, f'Totale: {total_amount:.2f} EUR')
-    y_pos -= 10 * mm
+    _draw_pdf_header(pdf, width, height, profile, month_value, total_amount)
+    y_pos = height - 52 * mm
 
     if not claims:
         pdf.setFont('Helvetica', 11)
+        pdf.setFillColor(colors.HexColor('#16384d'))
         pdf.drawString(18 * mm, y_pos, 'Nessuna spesa trovata per il periodo richiesto.')
     else:
         for index, claim in enumerate(claims, start=1):
             if y_pos < 34 * mm:
                 pdf.showPage()
-                y_pos = height - 24 * mm
-                pdf.setFillColor(colors.whitesmoke)
+                _draw_pdf_header(pdf, width, height, profile, month_value, total_amount)
+                y_pos = height - 52 * mm
 
-            pdf.setStrokeColor(colors.HexColor('#72f0e2'))
-            pdf.setFillColor(colors.HexColor('#dfeff2'))
-            pdf.roundRect(16 * mm, y_pos - 16 * mm, width - 32 * mm, 20 * mm, 4 * mm, stroke=1, fill=0)
+            pdf.setStrokeColor(colors.HexColor('#8aa8b7'))
+            pdf.setFillColor(colors.HexColor('#f4f8fb'))
+            pdf.roundRect(16 * mm, y_pos - 18 * mm, width - 32 * mm, 22 * mm, 4 * mm, stroke=1, fill=1)
+            pdf.setFillColor(colors.HexColor('#0f2f45'))
             pdf.setFont('Helvetica-Bold', 12)
             pdf.drawString(20 * mm, y_pos - 5 * mm, f'{index}. {claim.title}')
             amount_label = f'{claim.amount:.2f} {claim.currency}'
@@ -333,12 +337,11 @@ def claim_pdf_report(request):
 
             if claim.description:
                 pdf.setFont('Helvetica', 10)
-                pdf.setFillColor(colors.HexColor('#bcd5db'))
+                pdf.setFillColor(colors.HexColor('#355467'))
                 pdf.drawString(20 * mm, y_pos - 15 * mm, claim.description[:105])
 
             y_pos -= 24 * mm
 
-    pdf.showPage()
     pdf.save()
     buffer.seek(0)
 
