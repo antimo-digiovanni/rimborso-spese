@@ -95,4 +95,4 @@ class ExpenseClaim(models.Model):
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse('dashboard')
+        return reverse('claim_detail', args=[self.pk])

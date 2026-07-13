@@ -1,0 +1,53 @@
+{% extends 'claims/base.html' %}
+
+{% block title %}Dettaglio richiesta{% endblock %}
+
+{% block content %}
+<section class="panel form-panel">
+    <div>
+        <p class="eyebrow">{{ profile.company.name }}</p>
+        <h1>{{ claim.title }}</h1>
+        <p class="hero-copy">Qui trovi lo stato della richiesta, la ricevuta allegata e tutti i dati pronti da far vedere in azienda.</p>
+    </div>
+
+    <div class="detail-grid">
+        <article class="mini-card detail-card">
+            <strong>Stato</strong>
+            <div class="detail-value"><span class="status status-{{ claim.status }}">{{ claim.get_status_display }}</span></div>
+        </article>
+        <article class="mini-card detail-card">
+            <strong>Importo</strong>
+            <div class="detail-value">{{ claim.amount|floatformat:2 }} {{ claim.currency }}</div>
+        </article>
+        <article class="mini-card detail-card">
+            <strong>Categoria</strong>
+            <div class="detail-value">{{ claim.category }}</div>
+        </article>
+        <article class="mini-card detail-card">
+            <strong>Data spesa</strong>
+            <div class="detail-value">{{ claim.expense_date }}</div>
+        </article>
+        <article class="mini-card detail-card full">
+            <strong>Descrizione</strong>
+            <div class="detail-value">{{ claim.description|default:'Nessuna descrizione inserita.' }}</div>
+        </article>
+        <article class="mini-card detail-card full">
+            <strong>Scontrino o ricevuta</strong>
+            <div class="detail-value">
+                {% if claim.receipt %}
+                File presente e pronto da aprire.
+                {% else %}
+                Nessun file allegato per questa richiesta.
+                {% endif %}
+            </div>
+            <div class="detail-actions">
+                {% if claim.receipt %}
+                <a class="button" href="{{ claim.receipt.url }}" target="_blank" rel="noopener">Apri scontrino</a>
+                {% endif %}
+                <a class="button button-ghost" href="{% url 'claim_pdf_report' %}?month={{ claim.expense_date|date:'Y-m' }}">PDF del mese</a>
+                <a class="button button-ghost" href="{% url 'dashboard' %}">Torna alla bacheca</a>
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}

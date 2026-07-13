@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
@@ -117,11 +118,55 @@ class ClaimFlowTests(TestCase):
             'expense_date': '2026-07-01',
         })
 
-        self.assertRedirects(response, reverse('dashboard'))
+        claim = ExpenseClaim.objects.get()
+        self.assertRedirects(response, reverse('claim_detail', args=[claim.id]))
         claim = ExpenseClaim.objects.get()
         self.assertEqual(claim.company, self.company)
         self.assertEqual(claim.employee, self.profile)
         self.assertEqual(claim.amount, Decimal('48.50'))
+
+    def test_employee_can_open_claim_detail_and_receipt(self):
+        claim = ExpenseClaim.objects.create(
+            company=self.company,
+            employee=self.profile,
+            title='Parcheggio',
+            category='Trasferta',
+            amount=Decimal('12.00'),
+            expense_date='2026-07-04',
+            receipt=SimpleUploadedFile('scontrino.jpg', b'filecontent', content_type='image/jpeg'),
+        )
+
+        self.client.login(username='anna@example.com', password='StrongPass123!')
+        response = self.client.get(reverse('claim_detail', args=[claim.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Apri scontrino')
+        self.assertContains(response, 'Parcheggio')
+
+    def test_employee_can_download_claim_pdf_report(self):
+        ExpenseClaim.objects.create(
+            company=self.company,
+            employee=self.profile,
+            title='Hotel',
+            category='Trasferta',
+            amount=Decimal('145.00'),
+            expense_date='2026-07-05',
+        )
+
+        self.client.login(username='anna@example.com', password='StrongPass123!')
+        response = self.client.get(reverse('claim_pdf_report'), {'month': '2026-07'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        self.assertIn('attachment; filename="rimborsi-2026-07.pdf"', response['Content-Disposition'])
+
+    def test_dashboard_shows_pdf_export_and_not_quick_mobile_panel(self):
+        self.client.login(username='anna@example.com', password='StrongPass123!')
+        response = self.client.get(reverse('dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Scarica PDF del mese')
+        self.assertNotContains(response, 'Uso rapido da cellulare')
 
     def test_company_admin_can_review_claim_for_own_company(self):
         manager = User.objects.create_user(username='manager@example.com', password='StrongPass123!', email='manager@example.com')

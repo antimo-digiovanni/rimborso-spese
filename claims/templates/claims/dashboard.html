@@ -28,7 +28,7 @@
     </div>
     <div class="claim-list">
         {% for claim in claims %}
-        <article class="claim-row">
+        <a class="claim-row claim-row-link" href="{% url 'claim_detail' claim.id %}">
             <div>
                 <h3>{{ claim.title }}</h3>
                 <p>{{ claim.category }} · {{ claim.expense_date }}</p>
@@ -36,8 +36,9 @@
             <div class="claim-meta">
                 <strong>{{ claim.amount|floatformat:2 }} {{ claim.currency }}</strong>
                 <span class="status status-{{ claim.status }}">{{ claim.get_status_display }}</span>
+                <small class="claim-open-label">Apri richiesta</small>
             </div>
-        </article>
+        </a>
         {% empty %}
         <p>Nessuna richiesta inserita. Crea il primo rimborso per iniziare.</p>
         {% endfor %}
@@ -46,21 +47,18 @@
 
 <section class="panel compact-panel">
     <div class="section-head">
-        <h2>Uso rapido da cellulare</h2>
+        <h2>Report da portare in azienda</h2>
     </div>
-    <div class="mini-grid">
-        <article class="mini-card">
-            <strong>1. Apri</strong>
-            <p>Installa l'app e tienila nella schermata Home.</p>
-        </article>
-        <article class="mini-card">
-            <strong>2. Scatta</strong>
-            <p>Fotografa la ricevuta e allegala al rimborso.</p>
-        </article>
-        <article class="mini-card">
-            <strong>3. Invia</strong>
-            <p>Controlla quando la richiesta passa da inviata a approvata.</p>
-        </article>
-    </div>
+    <p class="panel-note">Scegli un mese specifico oppure scarica tutto lo storico in PDF per consegnarlo alla tua azienda.</p>
+    <form class="report-form" method="get" action="{% url 'claim_pdf_report' %}">
+        <div class="field">
+            <label for="reportMonth">Mese da esportare</label>
+            <input id="reportMonth" name="month" type="month" value="{{ report_month }}">
+        </div>
+        <div class="report-actions">
+            <button class="button" type="submit">Scarica PDF del mese</button>
+            <a class="button button-ghost" href="{% url 'claim_pdf_report' %}">Scarica PDF completo</a>
+        </div>
+    </form>
 </section>
 {% endblock %}

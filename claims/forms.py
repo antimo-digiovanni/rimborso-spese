@@ -107,6 +107,10 @@ class ExpenseClaimForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs.setdefault('class', 'form-input')
+        self.fields['receipt'].widget.attrs.update({
+            'accept': 'image/*,application/pdf',
+            'data-receipt-input': 'true',
+        })
 
 
 class ClaimReviewForm(forms.ModelForm):

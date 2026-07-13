@@ -1,4 +1,6 @@
 import logging
+from datetime import datetime
+from io import BytesIO
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -10,6 +12,11 @@ from django.db.models import Count, DecimalField, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
+from reportlab.pdfbase.pdfmetrics import stringWidth
+from reportlab.pdfgen import canvas
 
 from .forms import ClaimReviewForm, EmployeeRegistrationForm, ExpenseClaimForm
 from .models import Company, EmployeeProfile, ExpenseClaim
@@ -76,8 +83,8 @@ def manifest(request):
 
 def service_worker(request):
         script = """
-const CACHE_NAME = 'rimborso-spese-v4';
-const APP_SHELL = ['/', '/accedi/', '/registrati/', '/static/claims/app.css?v=20260713b'];
+const CACHE_NAME = 'rimborso-spese-v5';
+const APP_SHELL = ['/', '/accedi/', '/registrati/', '/static/claims/app.css?v=20260713c'];
 const PUBLIC_ROUTES = new Set(['/', '/accedi/', '/registrati/']);
 
 self.addEventListener('install', (event) => {
@@ -176,6 +183,7 @@ def dashboard(request):
     context = {
         'profile': profile,
         'claims': claims[:20],
+        'report_month': timezone.localdate().strftime('%Y-%m'),
         'summary': summary,
         'status_counts': status_counts,
     }
@@ -203,11 +211,123 @@ def create_claim(request):
             claim.company = profile.company
             claim.save()
             messages.success(request, 'Richiesta inviata correttamente.')
-            return redirect('dashboard')
+            return redirect('claim_detail', claim_id=claim.pk)
     else:
         form = ExpenseClaimForm()
 
     return render(request, 'claims/claim_form.html', {'form': form, 'profile': profile})
+
+
+@login_required
+def claim_detail(request, claim_id):
+    profile = _get_profile(request.user)
+    claim = get_object_or_404(
+        ExpenseClaim.objects.select_related('company', 'employee__user'),
+        pk=claim_id,
+        employee=profile,
+    )
+    return render(request, 'claims/claim_detail.html', {'claim': claim, 'profile': profile})
+
+
+def _claim_report_label(month_value):
+    if not month_value:
+        return 'storico completo'
+
+    month_start = datetime.strptime(month_value, '%Y-%m').date()
+    return month_start.strftime('%m/%Y')
+
+
+def _draw_pdf_row(pdf, y_pos, left_text, right_text, width):
+    pdf.setFont('Helvetica', 11)
+    pdf.setFillColor(colors.whitesmoke)
+    pdf.drawString(18 * mm, y_pos, left_text)
+    right_width = stringWidth(right_text, 'Helvetica-Bold', 11)
+    pdf.setFont('Helvetica-Bold', 11)
+    pdf.drawString(width - 18 * mm - right_width, y_pos, right_text)
+
+
+@login_required
+def claim_pdf_report(request):
+    profile = _get_profile(request.user)
+    month_value = (request.GET.get('month') or '').strip()
+    claims = profile.claims.all()
+
+    if month_value:
+        try:
+            month_start = datetime.strptime(month_value, '%Y-%m').date()
+        except ValueError:
+            messages.error(request, 'Formato mese non valido.')
+            return redirect('dashboard')
+        claims = claims.filter(expense_date__year=month_start.year, expense_date__month=month_start.month)
+
+    claims = claims.order_by('-expense_date', '-submitted_at')
+    total_amount = claims.aggregate(
+        total=Coalesce(
+            Sum('amount'),
+            Value(0, output_field=DecimalField(max_digits=10, decimal_places=2)),
+        )
+    )['total']
+
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    y_pos = height - 22 * mm
+
+    pdf.setTitle('Rimborso spese')
+    pdf.setFillColor(colors.HexColor('#0b3654'))
+    pdf.rect(0, height - 34 * mm, width, 34 * mm, fill=1, stroke=0)
+    pdf.setFillColor(colors.white)
+    pdf.setFont('Helvetica-Bold', 18)
+    pdf.drawString(18 * mm, height - 20 * mm, 'Report rimborsi spese')
+    pdf.setFont('Helvetica', 10)
+    pdf.drawString(18 * mm, height - 27 * mm, f'Dipendente: {profile.user.get_full_name().strip() or profile.user.username}')
+    pdf.drawString(108 * mm, height - 27 * mm, f'Azienda: {profile.company.name}')
+
+    y_pos -= 26 * mm
+    pdf.setFillColor(colors.HexColor('#dfeff2'))
+    pdf.setFont('Helvetica-Bold', 12)
+    pdf.drawString(18 * mm, y_pos, f'Periodo: {_claim_report_label(month_value)}')
+    pdf.drawRightString(width - 18 * mm, y_pos, f'Totale: {total_amount:.2f} EUR')
+    y_pos -= 10 * mm
+
+    if not claims:
+        pdf.setFont('Helvetica', 11)
+        pdf.drawString(18 * mm, y_pos, 'Nessuna spesa trovata per il periodo richiesto.')
+    else:
+        for index, claim in enumerate(claims, start=1):
+            if y_pos < 34 * mm:
+                pdf.showPage()
+                y_pos = height - 24 * mm
+                pdf.setFillColor(colors.whitesmoke)
+
+            pdf.setStrokeColor(colors.HexColor('#72f0e2'))
+            pdf.setFillColor(colors.HexColor('#dfeff2'))
+            pdf.roundRect(16 * mm, y_pos - 16 * mm, width - 32 * mm, 20 * mm, 4 * mm, stroke=1, fill=0)
+            pdf.setFont('Helvetica-Bold', 12)
+            pdf.drawString(20 * mm, y_pos - 5 * mm, f'{index}. {claim.title}')
+            amount_label = f'{claim.amount:.2f} {claim.currency}'
+            amount_width = stringWidth(amount_label, 'Helvetica-Bold', 12)
+            pdf.drawString(width - 20 * mm - amount_width, y_pos - 5 * mm, amount_label)
+
+            row_left = f'{claim.category} · {claim.expense_date:%d/%m/%Y} · Stato: {claim.get_status_display()}'
+            row_right = 'Ricevuta allegata' if claim.receipt else 'Nessuna ricevuta'
+            _draw_pdf_row(pdf, y_pos - 11 * mm, row_left, row_right, width)
+
+            if claim.description:
+                pdf.setFont('Helvetica', 10)
+                pdf.setFillColor(colors.HexColor('#bcd5db'))
+                pdf.drawString(20 * mm, y_pos - 15 * mm, claim.description[:105])
+
+            y_pos -= 24 * mm
+
+    pdf.showPage()
+    pdf.save()
+    buffer.seek(0)
+
+    filename_suffix = month_value or 'completo'
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="rimborsi-{filename_suffix}.pdf"'
+    return response
 
 
 @login_required

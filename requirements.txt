@@ -4,3 +4,4 @@ gunicorn
 whitenoise
 psycopg2-binary
 Pillow
+reportlab

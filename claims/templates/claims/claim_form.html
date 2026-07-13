@@ -7,13 +7,20 @@
     <div>
         <p class="eyebrow">{{ profile.company.name }}</p>
         <h1>Nuova richiesta rimborso</h1>
-        <p class="hero-copy">Inserisci i dati della spesa e allega la ricevuta se disponibile.</p>
+        <p class="hero-copy">Inserisci i dati della spesa, allega il file che hai gia pronto oppure scatta subito la foto dello scontrino.</p>
     </div>
     <form method="post" enctype="multipart/form-data" class="stack-lg">
         {% csrf_token %}
         {% for field in form %}
         <div class="field">
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {% if field.name == 'receipt' %}
+            <div class="receipt-actions">
+                <button class="button button-ghost" type="button" data-receipt-mode="file">Allega file</button>
+                <button class="button" type="button" data-receipt-mode="camera">Scatta scontrino</button>
+            </div>
+            <small>Su telefono puoi aprire direttamente la fotocamera posteriore per fotografare lo scontrino.</small>
+            {% endif %}
             {{ field }}
             {% for error in field.errors %}<div class="error">{{ error }}</div>{% endfor %}
         </div>
@@ -22,4 +29,25 @@
         <button class="button" type="submit">Invia richiesta</button>
     </form>
 </section>
+<script>
+    (function () {
+        const receiptInput = document.querySelector('[data-receipt-input="true"]');
+        const actionButtons = document.querySelectorAll('[data-receipt-mode]');
+
+        if (!receiptInput || !actionButtons.length) return;
+
+        actionButtons.forEach((button) => {
+            button.addEventListener('click', function () {
+                if (button.dataset.receiptMode === 'camera') {
+                    receiptInput.setAttribute('accept', 'image/*');
+                    receiptInput.setAttribute('capture', 'environment');
+                } else {
+                    receiptInput.setAttribute('accept', 'image/*,application/pdf');
+                    receiptInput.removeAttribute('capture');
+                }
+                receiptInput.click();
+            });
+        });
+    }());
+</script>
 {% endblock %}

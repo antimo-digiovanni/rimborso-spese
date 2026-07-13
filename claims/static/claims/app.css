@@ -514,6 +514,17 @@ img {
     padding: 18px;
 }
 
+.claim-row-link {
+    display: flex;
+    transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.claim-row-link:hover {
+    border-color: var(--border-strong);
+    background: rgba(114, 240, 226, 0.08);
+    transform: translateY(-1px);
+}
+
 .claim-row h3,
 .claim-row p {
     margin: 0;
@@ -528,6 +539,64 @@ img {
     align-items: flex-end;
     flex-direction: column;
     gap: 8px;
+}
+
+.claim-open-label {
+    color: var(--accent);
+    font-weight: 800;
+    letter-spacing: 0.03em;
+}
+
+.report-form {
+    display: grid;
+    gap: 16px;
+}
+
+.report-actions,
+.receipt-actions,
+.detail-actions,
+.detail-grid {
+    display: flex;
+    gap: 12px;
+}
+
+.report-actions,
+.receipt-actions,
+.detail-actions {
+    flex-wrap: wrap;
+}
+
+.receipt-actions {
+    margin-bottom: 4px;
+}
+
+.receipt-actions .button {
+    min-height: 44px;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 22px;
+}
+
+.detail-card {
+    padding: 18px;
+}
+
+.detail-card.full {
+    grid-column: 1 / -1;
+}
+
+.detail-value {
+    color: var(--text-strong);
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+.detail-actions {
+    margin-top: 24px;
 }
 
 .status {
@@ -652,6 +721,10 @@ img {
 
     .claim-meta {
         align-items: flex-start;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
     }
 
     .bottom-nav {
