@@ -1,0 +1,6 @@
+django==4.2.28
+dj-database-url
+gunicorn
+whitenoise
+psycopg2-binary
+Pillow

@@ -1,0 +1,29 @@
+{% extends 'claims/base.html' %}
+
+{% block title %}Registrazione dipendente{% endblock %}
+
+{% block content %}
+<section class="panel form-panel">
+    <div>
+        <p class="eyebrow">Onboarding</p>
+        <h1>Registrazione dipendente</h1>
+        <p class="hero-copy">Inserisci il tuo nome, la tua email di lavoro e il nome dell'azienda. Se l'azienda non esiste ancora, apriamo subito uno spazio di prova.</p>
+    </div>
+    <form method="post" class="stack-lg">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+            {% for error in field.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+        {% for error in form.non_field_errors %}<div class="error">{{ error }}</div>{% endfor %}
+        <button class="button" type="submit">Crea account</button>
+    </form>
+    <div class="panel-note">
+        Primo accesso: il primo dipendente che registra una nuova azienda diventa amministratore del tenant di prova e puo mostrare l'app al proprio datore di lavoro.
+    </div>
+</section>
+{% endblock %}

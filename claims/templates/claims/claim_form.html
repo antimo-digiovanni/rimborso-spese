@@ -1,0 +1,25 @@
+{% extends 'claims/base.html' %}
+
+{% block title %}Nuovo rimborso{% endblock %}
+
+{% block content %}
+<section class="panel form-panel">
+    <div>
+        <p class="eyebrow">{{ profile.company.name }}</p>
+        <h1>Nuova richiesta rimborso</h1>
+        <p class="hero-copy">Inserisci i dati della spesa e allega la ricevuta se disponibile.</p>
+    </div>
+    <form method="post" enctype="multipart/form-data" class="stack-lg">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+        {% for error in form.non_field_errors %}<div class="error">{{ error }}</div>{% endfor %}
+        <button class="button" type="submit">Invia richiesta</button>
+    </form>
+</section>
+{% endblock %}

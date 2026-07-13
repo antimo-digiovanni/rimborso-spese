@@ -1,0 +1,66 @@
+{% extends 'claims/base.html' %}
+
+{% block title %}Dashboard rimborsi{% endblock %}
+
+{% block content %}
+<section class="hero dashboard-hero">
+    <div>
+        <p class="eyebrow">{{ profile.company.name }}</p>
+        <h1>{{ request.user.first_name|default:request.user.username }}, ecco i tuoi rimborsi.</h1>
+        <p class="hero-copy">Carica nuove spese dal telefono, controlla lo stato delle richieste e tieni traccia del totale inviato.</p>
+    </div>
+    <div class="hero-actions">
+        <a class="button" href="{% url 'create_claim' %}">Nuova richiesta</a>
+    </div>
+</section>
+
+<section class="kpi-grid">
+    <article class="kpi-card"><span>Totale richieste</span><strong>{{ summary.total_submitted }}</strong></article>
+    <article class="kpi-card"><span>Valore totale</span><strong>{{ summary.total_amount|floatformat:2 }} €</strong></article>
+    <article class="kpi-card"><span>Inviate</span><strong>{{ status_counts.submitted }}</strong></article>
+    <article class="kpi-card"><span>Rimborsate</span><strong>{{ status_counts.reimbursed }}</strong></article>
+</section>
+
+<section class="panel">
+    <div class="section-head">
+        <h2>Ultime richieste</h2>
+        <a href="{% url 'create_claim' %}">Aggiungi</a>
+    </div>
+    <div class="claim-list">
+        {% for claim in claims %}
+        <article class="claim-row">
+            <div>
+                <h3>{{ claim.title }}</h3>
+                <p>{{ claim.category }} · {{ claim.expense_date }}</p>
+            </div>
+            <div class="claim-meta">
+                <strong>{{ claim.amount|floatformat:2 }} {{ claim.currency }}</strong>
+                <span class="status status-{{ claim.status }}">{{ claim.get_status_display }}</span>
+            </div>
+        </article>
+        {% empty %}
+        <p>Nessuna richiesta inserita. Crea il primo rimborso per iniziare.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="panel compact-panel">
+    <div class="section-head">
+        <h2>Uso rapido da cellulare</h2>
+    </div>
+    <div class="mini-grid">
+        <article class="mini-card">
+            <strong>1. Apri</strong>
+            <p>Installa l'app e tienila nella schermata Home.</p>
+        </article>
+        <article class="mini-card">
+            <strong>2. Scatta</strong>
+            <p>Fotografa la ricevuta e allegala al rimborso.</p>
+        </article>
+        <article class="mini-card">
+            <strong>3. Invia</strong>
+            <p>Controlla quando la richiesta passa da inviata a approvata.</p>
+        </article>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'claims/base.html' %}
+
+{% block title %}Profilo{% endblock %}
+
+{% block content %}
+<section class="panel form-panel narrow">
+    <div>
+        <p class="eyebrow">Profilo</p>
+        <h1>{{ request.user.get_full_name|default:request.user.username }}</h1>
+        <p class="hero-copy">Il tuo spazio personale per usare Expense Hub dal telefono e presentarlo alla tua azienda.</p>
+    </div>
+
+    <div class="stack-lg">
+        <div class="info-card">
+            <strong>Azienda</strong>
+            <p>{{ profile.company.name }}</p>
+        </div>
+        <div class="info-card">
+            <strong>Email</strong>
+            <p>{{ request.user.email }}</p>
+        </div>
+        <div class="info-card">
+            <strong>Ruolo</strong>
+            <p>{% if is_company_admin %}Referente della prova aziendale{% else %}Dipendente{% endif %}</p>
+        </div>
+    </div>
+
+    <div class="panel-note">
+        Installa l'app sul telefono da browser compatibili con il pulsante Installa oppure, su iPhone, usa Condividi → Aggiungi a Home.
+    </div>
+
+    {% if is_company_admin %}
+    <div class="admin-pocket">
+        <strong>Area azienda</strong>
+        <p>Quando vuoi mostrare la prova al datore di lavoro, qui trovi il pannello dedicato.</p>
+        <a class="button button-ghost" href="{% url 'company_dashboard' %}">Apri gestione azienda</a>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

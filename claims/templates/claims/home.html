@@ -1,0 +1,26 @@
+{% extends 'claims/base.html' %}
+
+{% block title %}Expense Hub · Multi azienda{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div>
+        <p class="eyebrow">Rimborso spese, pronto da provare</p>
+        <h1>Un dipendente si registra con il nome della sua azienda e inizia subito a usare l'app.</h1>
+        <p class="hero-copy">Expense Hub nasce per il test dal basso: un dipendente apre il suo spazio di prova, carica rimborsi dal cellulare e poi lo fa vedere alla propria azienda.</p>
+        <div class="hero-actions">
+            <a class="button" href="{% url 'register' %}">Crea account dipendente</a>
+            <a class="button button-ghost" href="{% url 'login' %}">Accedi</a>
+        </div>
+    </div>
+    <aside class="stats-card">
+        <h2>Installabile da telefono</h2>
+        <ul>
+            <li><strong>{{ company_count }}</strong> aziende attive in demo</li>
+            <li><strong>{{ claim_count }}</strong> rimborsi gestiti</li>
+            <li>registrazione senza codice invito</li>
+            <li>PWA installabile da Android e browser mobile compatibili</li>
+        </ul>
+    </aside>
+</section>
+{% endblock %}

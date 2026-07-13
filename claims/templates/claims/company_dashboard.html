@@ -1,0 +1,46 @@
+{% extends 'claims/base.html' %}
+
+{% block title %}Gestione azienda{% endblock %}
+
+{% block content %}
+<section class="hero dashboard-hero">
+    <div>
+        <p class="eyebrow">Pannello azienda</p>
+        <h1>{{ profile.company.name }}: approvazioni e monitoraggio rimborsi.</h1>
+        <p class="hero-copy">Qui il responsabile aziendale controlla le richieste del tenant corrente senza vedere dati di altre aziende.</p>
+    </div>
+    <div class="hero-actions">
+        <a class="button button-ghost" href="{% url 'dashboard' %}">Torna dashboard dipendente</a>
+    </div>
+</section>
+
+<section class="kpi-grid">
+    <article class="kpi-card"><span>Da gestire</span><strong>{{ reviewable_count }}</strong></article>
+    <article class="kpi-card"><span>Inviate</span><strong>{{ submitted_count }}</strong></article>
+    <article class="kpi-card"><span>Approvate</span><strong>{{ approved_count }}</strong></article>
+</section>
+
+<section class="panel">
+    <div class="section-head">
+        <h2>Rimborsi aziendali</h2>
+    </div>
+    <div class="claim-list">
+        {% for claim in claims %}
+        <article class="claim-row">
+            <div>
+                <h3>{{ claim.title }}</h3>
+                <p>{{ claim.employee.user.get_full_name|default:claim.employee.user.username }} · {{ claim.expense_date }} · {{ claim.category }}</p>
+                {% if claim.admin_notes %}<p>Note: {{ claim.admin_notes }}</p>{% endif %}
+            </div>
+            <div class="claim-meta">
+                <strong>{{ claim.amount|floatformat:2 }} {{ claim.currency }}</strong>
+                <span class="status status-{{ claim.status }}">{{ claim.get_status_display }}</span>
+                <a href="{% url 'review_claim' claim.id %}">Gestisci</a>
+            </div>
+        </article>
+        {% empty %}
+        <p>Nessuna richiesta presente per questa azienda.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

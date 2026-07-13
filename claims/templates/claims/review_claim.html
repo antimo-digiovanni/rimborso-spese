@@ -1,0 +1,25 @@
+{% extends 'claims/base.html' %}
+
+{% block title %}Gestisci richiesta{% endblock %}
+
+{% block content %}
+<section class="panel form-panel">
+    <div>
+        <p class="eyebrow">Revisione rimborso</p>
+        <h1>{{ claim.title }}</h1>
+        <p class="hero-copy">{{ claim.employee.user.get_full_name|default:claim.employee.user.username }} · {{ claim.amount|floatformat:2 }} {{ claim.currency }} · {{ claim.expense_date }}</p>
+        {% if claim.description %}<p>{{ claim.description }}</p>{% endif %}
+    </div>
+    <form method="post" class="stack-lg">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+        <button class="button" type="submit">Salva esito</button>
+    </form>
+</section>
+{% endblock %}

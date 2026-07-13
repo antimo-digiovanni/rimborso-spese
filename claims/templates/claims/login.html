@@ -1,0 +1,24 @@
+{% extends 'claims/base.html' %}
+
+{% block title %}Accedi{% endblock %}
+
+{% block content %}
+<section class="panel form-panel narrow">
+    <div>
+        <p class="eyebrow">Accesso</p>
+        <h1>Accedi al tuo spazio</h1>
+    </div>
+    <form method="post" class="stack-lg">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<div class="error">{{ error }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+        {% for error in form.non_field_errors %}<div class="error">{{ error }}</div>{% endfor %}
+        <button class="button" type="submit">Accedi</button>
+    </form>
+</section>
+{% endblock %}

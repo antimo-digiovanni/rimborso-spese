@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Expense Hub{% endblock %}</title>
+    <meta name="theme-color" content="#1d4ed8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Expense Hub">
+    <link rel="manifest" href="{% url 'manifest' %}">
+    <link rel="icon" href="/static/claims/icons/icon-192.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/static/claims/icons/icon-192.svg">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Manrope:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/static/claims/app.css">
+</head>
+<body>
+    <header class="site-header">
+        <a class="brand" href="/">Expense Hub</a>
+        <nav class="top-nav">
+            {% if request.user.is_authenticated %}
+            <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}">Dashboard</a>
+            <a href="{% url 'create_claim' %}" class="{% if request.resolver_match.url_name == 'create_claim' %}is-active{% endif %}">Nuovo rimborso</a>
+            <a href="{% url 'profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}">Profilo</a>
+            <a href="{% url 'logout' %}">Esci</a>
+            {% else %}
+            <a href="{% url 'login' %}">Accedi</a>
+            <a class="button button-ghost" href="{% url 'register' %}">Registrati</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="page-shell">
+        <div class="install-banner" id="installBanner" hidden>
+            <div>
+                <strong>Installa l'app</strong>
+                <p>Aggiungi Expense Hub alla schermata Home del telefono per usarla come una vera app.</p>
+            </div>
+            <button class="button" id="installButton" type="button">Installa</button>
+        </div>
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="message">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+    {% if request.user.is_authenticated %}
+    <nav class="bottom-nav" aria-label="Navigazione app">
+        <a href="{% url 'dashboard' %}" class="bottom-nav-link {% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}">
+            <span class="bottom-nav-icon">◫</span>
+            <span>Home</span>
+        </a>
+        <a href="{% url 'create_claim' %}" class="bottom-nav-link {% if request.resolver_match.url_name == 'create_claim' %}is-active{% endif %}">
+            <span class="bottom-nav-icon">＋</span>
+            <span>Nuovo</span>
+        </a>
+        <a href="{% url 'profile' %}" class="bottom-nav-link {% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}">
+            <span class="bottom-nav-icon">◎</span>
+            <span>Profilo</span>
+        </a>
+    </nav>
+    {% endif %}
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('{% url 'service_worker' %}');
+            });
+        }
+
+        let deferredPrompt = null;
+        const installBanner = document.getElementById('installBanner');
+        const installButton = document.getElementById('installButton');
+
+        window.addEventListener('beforeinstallprompt', function (event) {
+            event.preventDefault();
+            deferredPrompt = event;
+            if (installBanner) installBanner.hidden = false;
+        });
+
+        if (installButton) {
+            installButton.addEventListener('click', async function () {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                installBanner.hidden = true;
+            });
+        }
+    </script>
+</body>
+</html>
