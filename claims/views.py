@@ -76,8 +76,8 @@ def manifest(request):
 
 def service_worker(request):
         script = """
-const CACHE_NAME = 'rimborso-spese-v2';
-const APP_SHELL = ['/', '/accedi/', '/registrati/', '/static/claims/app.css'];
+const CACHE_NAME = 'rimborso-spese-v3';
+const APP_SHELL = ['/', '/accedi/', '/registrati/', '/static/claims/app.css?v=20260713b'];
 
 self.addEventListener('install', (event) => {
     event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));

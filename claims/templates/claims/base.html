@@ -12,7 +12,7 @@
     <link rel="icon" href="/static/claims/branding/app-logo-192.png" type="image/png">
     <link rel="apple-touch-icon" href="/static/claims/branding/app-logo-192.png">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Manrope:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="/static/claims/app.css">
+    <link rel="stylesheet" href="/static/claims/app.css?v=20260713b">
 </head>
 <body>
     <header class="site-header">
@@ -119,7 +119,7 @@
                 if (isIosDevice()) {
                     showInstallBanner(
                         'Installa su iPhone',
-                        'Apri questa pagina in Safari, tocca Condividi e poi scegli Aggiungi a Home.'
+                        'Apri questa pagina in Safari, tocca Condividi e poi Aggiungi a Home per averla come app sul telefono.'
                     );
                     return;
                 }
@@ -127,14 +127,14 @@
                 if (isAndroidDevice()) {
                     showInstallBanner(
                         'Installa su Android',
-                        'Apri Rimborso spese in Chrome su Android e usa Aggiungi a schermata Home se il prompt non compare subito.'
+                        'Apri Rimborso spese in Chrome su Android e tocca Installa. Se il prompt non compare, usa il menu e scegli Aggiungi a schermata Home.'
                     );
                     return;
                 }
 
                 showInstallBanner(
                     'Installazione da mobile',
-                    'L\'installazione rapida e disponibile su Android. Su iPhone usa Safari, poi Condividi e Aggiungi a Home.'
+                    'Su Android usa Chrome e tocca Installa. Su iPhone apri in Safari, poi tocca Condividi e Aggiungi a Home.'
                 );
             });
         }
