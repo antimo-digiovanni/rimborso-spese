@@ -12,6 +12,8 @@ from django.db.models import Count, DecimalField, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
@@ -25,6 +27,7 @@ from .models import Company, EmployeeProfile, ExpenseClaim, ExpenseReceipt
 logger = logging.getLogger(__name__)
 
 
+@method_decorator(never_cache, name='dispatch')
 class EmployeeLoginView(LoginView):
     template_name = 'claims/login.html'
 
@@ -129,6 +132,7 @@ self.addEventListener('fetch', (event) => {
         return HttpResponse(script, content_type='application/javascript')
 
 
+@never_cache
 def register(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
