@@ -118,25 +118,29 @@ def register(request):
 
     if request.method == 'POST':
         form = EmployeeRegistrationForm(request.POST)
-        if form.is_valid():
-            try:
-                user, profile = form.save()
-            except ValidationError as exc:
-                form.add_error(None, exc)
-            except Exception:
-                logger.exception('Registration failed during save flow.')
-                form.add_error(None, 'Non siamo riusciti a completare la registrazione. Riprova tra poco.')
-            else:
+        try:
+            if form.is_valid():
                 try:
-                    login(request, user)
-                    if profile.is_company_admin:
-                        messages.success(request, 'Account creato. Abbiamo aperto il tuo spazio aziendale di prova: ora puoi iniziare subito.')
-                    else:
-                        messages.success(request, 'Account creato. Ora puoi inserire la tua prima richiesta di rimborso.')
-                    return redirect('dashboard')
+                    user, profile = form.save()
+                except ValidationError as exc:
+                    form.add_error(None, exc)
                 except Exception:
-                    logger.exception('Registration failed after account creation.')
-                    form.add_error(None, 'Account creato ma accesso automatico non disponibile. Prova ad accedere manualmente.')
+                    logger.exception('Registration failed during save flow.')
+                    form.add_error(None, 'Non siamo riusciti a completare la registrazione. Riprova tra poco.')
+                else:
+                    try:
+                        login(request, user)
+                        if profile.is_company_admin:
+                            messages.success(request, 'Account creato. Abbiamo aperto il tuo spazio aziendale di prova: ora puoi iniziare subito.')
+                        else:
+                            messages.success(request, 'Account creato. Ora puoi inserire la tua prima richiesta di rimborso.')
+                        return redirect('dashboard')
+                    except Exception:
+                        logger.exception('Registration failed after account creation.')
+                        form.add_error(None, 'Account creato ma accesso automatico non disponibile. Prova ad accedere manualmente.')
+        except Exception:
+            logger.exception('Registration failed during form validation.')
+            form.add_error(None, 'Non siamo riusciti a completare la registrazione. Riprova tra poco.')
     else:
         form = EmployeeRegistrationForm()
 
