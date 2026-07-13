@@ -76,8 +76,9 @@ def manifest(request):
 
 def service_worker(request):
         script = """
-const CACHE_NAME = 'rimborso-spese-v3';
+const CACHE_NAME = 'rimborso-spese-v4';
 const APP_SHELL = ['/', '/accedi/', '/registrati/', '/static/claims/app.css?v=20260713b'];
+const PUBLIC_ROUTES = new Set(['/', '/accedi/', '/registrati/']);
 
 self.addEventListener('install', (event) => {
     event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
@@ -93,6 +94,16 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') return;
+
+    const url = new URL(event.request.url);
+    const isStaticAsset = url.origin === self.location.origin && url.pathname.startsWith('/static/');
+    const isPublicRoute = url.origin === self.location.origin && PUBLIC_ROUTES.has(url.pathname);
+
+    if (!isStaticAsset && !isPublicRoute) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request).then((cached) => {
             if (cached) return cached;
