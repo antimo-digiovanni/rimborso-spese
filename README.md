@@ -55,6 +55,13 @@ Con questa configurazione i dati si separano cosi:
 - lo storage S3 compatibile conserva i file veri: loghi aziendali in `company-logos/` e scontrini in `receipts/anno/mese/`.
 - se `USE_S3_MEDIA=0`, i file tornano a essere salvati localmente in `media/`, utile solo in sviluppo.
 
+Se invece vuoi restare tutto su Render senza bucket esterno, puoi usare un disk persistente e impostare:
+
+- `SQLITE_PATH=/var/data/db.sqlite3`
+- `MEDIA_ROOT_PATH=/var/data/media`
+
+In questo caso sia database SQLite sia file caricati finiscono nel disco montato su `/var/data`.
+
 ## Deploy Render
 
 Se vuoi pubblicarla come servizio separato dal progetto attuale, conviene usare una repo dedicata che contenga solo la cartella expense_hub.
@@ -113,5 +120,12 @@ Per non perdere file o dati ai riavvii:
 - collega un database Postgres Render e imposta `DATABASE_URL`
 - collega uno storage S3 compatibile come Cloudflare R2, AWS S3 o Backblaze B2
 - abilita `USE_S3_MEDIA=1`
+
+Alternativa piu semplice ma meno scalabile:
+
+- aggiungi un Render Disk al servizio
+- monta il disk su `/var/data`
+- imposta `SQLITE_PATH=/var/data/db.sqlite3`
+- imposta `MEDIA_ROOT_PATH=/var/data/media`
 
 In questo modo il servizio web resta stateless: l'app gira su Render, i dati tabellari vanno su Postgres e i file caricati restano nel bucket.

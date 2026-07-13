@@ -28,6 +28,8 @@ INSTALLED_APPS = [
 ]
 
 USE_S3_MEDIA = os.environ.get('USE_S3_MEDIA', '0').strip().lower() in {'1', 'true', 'yes', 'on'}
+SQLITE_PATH = os.environ.get('SQLITE_PATH', '').strip()
+MEDIA_ROOT_PATH = os.environ.get('MEDIA_ROOT_PATH', '').strip()
 
 if USE_S3_MEDIA:
     INSTALLED_APPS.append('storages')
@@ -75,7 +77,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': SQLITE_PATH or (BASE_DIR / 'db.sqlite3'),
         }
     }
 
@@ -119,7 +121,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = MEDIA_ROOT_PATH or (BASE_DIR / 'media')
 
 if USE_S3_MEDIA:
     AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
