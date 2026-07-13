@@ -16,8 +16,20 @@
     <aside class="stats-card">
         <h2>Installabile da telefono</h2>
         <ul>
-            <li><strong>{{ company_count }}</strong> aziende attive in demo</li>
-            <li><strong>{{ claim_count }}</strong> rimborsi gestiti</li>
+            <li>
+                {% if company_count %}
+                <strong>{{ company_count }}</strong> aziende attive in demo
+                {% else %}
+                <strong>Apri la prima</strong> azienda attiva in demo
+                {% endif %}
+            </li>
+            <li>
+                {% if claim_count %}
+                <strong>{{ claim_count }}</strong> rimborsi gestiti
+                {% else %}
+                <strong>Carica il primo</strong> rimborso gestito
+                {% endif %}
+            </li>
             <li>registrazione senza codice invito</li>
             <li>PWA installabile da Android e browser mobile compatibili</li>
         </ul>
