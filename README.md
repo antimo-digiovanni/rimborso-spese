@@ -41,6 +41,19 @@ Questo comando crea o aggiorna l'azienda, il suo codice invito e il primo utente
 - `ALLOWED_HOSTS=your-domain.onrender.com`
 - `DATABASE_URL=<postgres-url>`
 - `DEFAULT_FROM_EMAIL=noreply@your-domain.com`
+- `USE_S3_MEDIA=1`
+- `AWS_ACCESS_KEY_ID=<bucket-key>`
+- `AWS_SECRET_ACCESS_KEY=<bucket-secret>`
+- `AWS_STORAGE_BUCKET_NAME=<bucket-name>`
+- `AWS_S3_REGION_NAME=<bucket-region>`
+- `AWS_S3_ENDPOINT_URL=<https://...>`
+- `AWS_S3_CUSTOM_DOMAIN=<cdn-or-public-domain-opzionale>`
+
+Con questa configurazione i dati si separano cosi:
+
+- `DATABASE_URL` conserva dati strutturati come utenti, aziende, richieste, stati e riferimenti agli allegati.
+- lo storage S3 compatibile conserva i file veri: loghi aziendali in `company-logos/` e scontrini in `receipts/anno/mese/`.
+- se `USE_S3_MEDIA=0`, i file tornano a essere salvati localmente in `media/`, utile solo in sviluppo.
 
 ## Deploy Render
 
@@ -92,3 +105,13 @@ Start command:
 ```text
 python -m gunicorn expense_hub_project.wsgi:application --bind 0.0.0.0:${PORT:-10000}
 ```
+
+## Persistenza consigliata su Render
+
+Per non perdere file o dati ai riavvii:
+
+- collega un database Postgres Render e imposta `DATABASE_URL`
+- collega uno storage S3 compatibile come Cloudflare R2, AWS S3 o Backblaze B2
+- abilita `USE_S3_MEDIA=1`
+
+In questo modo il servizio web resta stateless: l'app gira su Render, i dati tabellari vanno su Postgres e i file caricati restano nel bucket.

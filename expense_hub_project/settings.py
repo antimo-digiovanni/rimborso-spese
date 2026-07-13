@@ -27,6 +27,11 @@ INSTALLED_APPS = [
     'claims',
 ]
 
+USE_S3_MEDIA = os.environ.get('USE_S3_MEDIA', '0').strip().lower() in {'1', 'true', 'yes', 'on'}
+
+if USE_S3_MEDIA:
+    INSTALLED_APPS.append('storages')
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -115,6 +120,25 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+if USE_S3_MEDIA:
+    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
+    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
+    AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
+    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', '') or None
+    AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL', '') or None
+    AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN', '') or None
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = False
+    AWS_S3_FILE_OVERWRITE = False
+
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3.S3Storage'
+
+    media_base_url = AWS_S3_CUSTOM_DOMAIN
+    if media_base_url:
+        MEDIA_URL = f"https://{media_base_url}/"
+    elif AWS_S3_ENDPOINT_URL and AWS_STORAGE_BUCKET_NAME:
+        MEDIA_URL = f"{AWS_S3_ENDPOINT_URL.rstrip('/')}/{AWS_STORAGE_BUCKET_NAME}/"
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
