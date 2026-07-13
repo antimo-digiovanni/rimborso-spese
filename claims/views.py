@@ -6,7 +6,6 @@ from django.http import HttpResponse
 from django.db.models import Count, DecimalField, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
-from django.templatetags.static import static
 from django.utils import timezone
 
 from .forms import ClaimReviewForm, EmployeeRegistrationForm, ExpenseClaimForm
@@ -34,25 +33,25 @@ def home(request):
 
 def manifest(request):
     body = {
-        'name': 'Expense Hub',
-        'short_name': 'Expense Hub',
+        'name': 'Rimborso spese',
+        'short_name': 'Rimborso',
         'description': 'Rimborsi spese per dipendenti, installabile da mobile.',
         'start_url': '/',
         'scope': '/',
         'display': 'standalone',
-        'background_color': '#f5f8ff',
-        'theme_color': '#1d4ed8',
+        'background_color': '#071c31',
+        'theme_color': '#0b3654',
         'icons': [
             {
-                'src': static('claims/icons/icon-192.svg'),
+                'src': '/static/claims/branding/app-logo-192.png',
                 'sizes': '192x192',
-                'type': 'image/svg+xml',
+                'type': 'image/png',
                 'purpose': 'any maskable',
             },
             {
-                'src': static('claims/icons/icon-512.svg'),
+                'src': '/static/claims/branding/app-logo-512.png',
                 'sizes': '512x512',
-                'type': 'image/svg+xml',
+                'type': 'image/png',
                 'purpose': 'any maskable',
             },
         ],
@@ -63,7 +62,7 @@ def manifest(request):
 
 def service_worker(request):
         script = """
-const CACHE_NAME = 'expense-hub-v1';
+const CACHE_NAME = 'rimborso-spese-v2';
 const APP_SHELL = ['/', '/accedi/', '/registrati/', '/static/claims/app.css'];
 
 self.addEventListener('install', (event) => {

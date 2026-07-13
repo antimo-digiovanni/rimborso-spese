@@ -3,20 +3,28 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Expense Hub{% endblock %}</title>
-    <meta name="theme-color" content="#1d4ed8">
+    <title>{% block title %}Rimborso spese{% endblock %}</title>
+    <meta name="theme-color" content="#0b3654">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Expense Hub">
+    <meta name="apple-mobile-web-app-title" content="Rimborso spese">
     <link rel="manifest" href="{% url 'manifest' %}">
-    <link rel="icon" href="/static/claims/icons/icon-192.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/static/claims/icons/icon-192.svg">
+    <link rel="icon" href="/static/claims/branding/app-logo-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="/static/claims/branding/app-logo-192.png">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Manrope:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="/static/claims/app.css">
 </head>
 <body>
     <header class="site-header">
-        <a class="brand" href="/">Expense Hub</a>
+        <a class="brand" href="/">
+            <span class="brand-mark">
+                <img src="/static/claims/branding/app-logo.png" alt="Logo Rimborso spese">
+            </span>
+            <span class="brand-copy">
+                <strong>Rimborso spese</strong>
+                <small>App rimborsi installabile</small>
+            </span>
+        </a>
         <nav class="top-nav">
             {% if request.user.is_authenticated %}
             <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}">Dashboard</a>
@@ -34,7 +42,7 @@
         <div class="install-banner" id="installBanner" hidden>
             <div>
                 <strong>Installa l'app</strong>
-                <p>Aggiungi Expense Hub alla schermata Home del telefono per usarla come una vera app.</p>
+                <p>Aggiungi Rimborso spese alla schermata Home del telefono per usarla come una vera app.</p>
             </div>
             <button class="button" id="installButton" type="button">Installa</button>
         </div>
