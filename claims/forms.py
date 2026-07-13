@@ -89,6 +89,15 @@ class ExpenseClaimForm(forms.ModelForm):
     class Meta:
         model = ExpenseClaim
         fields = ['title', 'category', 'description', 'amount', 'currency', 'expense_date', 'receipt']
+        labels = {
+            'title': 'Titolo',
+            'category': 'Categoria',
+            'description': 'Descrizione',
+            'amount': 'Importo',
+            'currency': 'Valuta',
+            'expense_date': 'Data spesa',
+            'receipt': 'Ricevuta',
+        }
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
             'expense_date': forms.DateInput(attrs={'type': 'date'}),
@@ -104,6 +113,10 @@ class ClaimReviewForm(forms.ModelForm):
     class Meta:
         model = ExpenseClaim
         fields = ['status', 'admin_notes']
+        labels = {
+            'status': 'Stato',
+            'admin_notes': 'Note interne',
+        }
         widgets = {
             'admin_notes': forms.Textarea(attrs={'rows': 4}),
         }
