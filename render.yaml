@@ -2,7 +2,7 @@ services:
   - type: web
     name: expense-hub
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
     preDeployCommand: python manage.py migrate --noinput
-    startCommand: python -m gunicorn expense_hub_project.wsgi:application --bind 0.0.0.0:${PORT:-10000}
+    startCommand: sh -c 'python manage.py migrate --noinput && python -m gunicorn expense_hub_project.wsgi:application --bind 0.0.0.0:${PORT:-10000}'
     autoDeploy: true

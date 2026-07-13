@@ -1,1 +1,1 @@
-web: python -m gunicorn expense_hub_project.wsgi:application --bind 0.0.0.0:${PORT:-10000}
+web: sh -c 'python manage.py migrate --noinput && python -m gunicorn expense_hub_project.wsgi:application --bind 0.0.0.0:${PORT:-10000}'
