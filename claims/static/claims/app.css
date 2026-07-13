@@ -176,13 +176,36 @@ img {
 .install-banner {
     display: block;
     margin: 0 auto 18px;
-    padding: 20px 22px;
+    padding: 18px 22px 18px 78px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(16, 55, 84, 0.96), rgba(8, 25, 42, 0.98));
+}
+
+.install-banner::before {
+    content: 'APP';
+    position: absolute;
+    left: 22px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    color: #042035;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    box-shadow: 0 12px 28px rgba(50, 214, 223, 0.24);
 }
 
 .install-banner strong {
     display: block;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     color: var(--text-strong);
+    font-size: 1rem;
 }
 
 .install-banner p,
@@ -614,8 +637,13 @@ img {
     }
 
     .install-banner {
-        flex-direction: column;
-        align-items: flex-start;
+        padding: 18px 18px 18px 72px;
+    }
+
+    .install-banner::before {
+        left: 18px;
+        width: 38px;
+        height: 38px;
     }
 
     .mini-grid {
