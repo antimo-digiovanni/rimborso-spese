@@ -131,15 +131,22 @@ img {
     box-shadow: var(--shadow-soft);
 }
 
-.top-nav a {
+.top-nav a,
+.top-nav button {
     padding: 11px 16px;
     border-radius: 999px;
     color: var(--muted);
     font-weight: 800;
+    font-size: 0.98rem;
+    border: 0;
+    background: transparent;
+    line-height: 1.1;
+    cursor: pointer;
     transition: background-color 140ms ease, color 140ms ease, transform 140ms ease;
 }
 
-.top-nav a:hover {
+.top-nav a:hover,
+.top-nav button:hover {
     color: var(--text-strong);
     background: rgba(255, 255, 255, 0.05);
 }
@@ -167,10 +174,7 @@ img {
 }
 
 .install-banner {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 18px;
+    display: block;
     margin: 0 auto 18px;
     padding: 20px 22px;
 }
@@ -604,7 +608,9 @@ img {
     }
 
     .top-nav {
-        display: none;
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
     }
 
     .install-banner {

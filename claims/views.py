@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.db import DatabaseError
 from django.db.models import Count, DecimalField, Sum, Value
@@ -113,14 +114,17 @@ def register(request):
     if request.method == 'POST':
         form = EmployeeRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            profile = _get_profile(user)
-            if profile.is_company_admin:
-                messages.success(request, 'Account creato. Abbiamo aperto il tuo spazio aziendale di prova: ora puoi iniziare subito.')
+            try:
+                user, profile = form.save()
+            except ValidationError as exc:
+                form.add_error(None, exc)
             else:
-                messages.success(request, 'Account creato. Ora puoi inserire la tua prima richiesta di rimborso.')
-            return redirect('dashboard')
+                login(request, user)
+                if profile.is_company_admin:
+                    messages.success(request, 'Account creato. Abbiamo aperto il tuo spazio aziendale di prova: ora puoi iniziare subito.')
+                else:
+                    messages.success(request, 'Account creato. Ora puoi inserire la tua prima richiesta di rimborso.')
+                return redirect('dashboard')
     else:
         form = EmployeeRegistrationForm()
 

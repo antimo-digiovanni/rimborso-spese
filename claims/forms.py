@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-from django.db import transaction
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from django.utils.text import slugify
 
 from .models import Company, EmployeeProfile, ExpenseClaim
@@ -34,7 +35,7 @@ class EmployeeRegistrationForm(forms.Form):
 
     def clean_email(self):
         email = self.cleaned_data['email'].strip().lower()
-        if User.objects.filter(username=email).exists():
+        if User.objects.filter(username__iexact=email).exists():
             raise forms.ValidationError('Esiste gia un account con questa email.')
         return email
 
@@ -55,22 +56,33 @@ class EmployeeRegistrationForm(forms.Form):
         company_was_created = False
 
         if company is None:
-            company = Company.objects.create(name=self.company_name)
-            company_was_created = True
+            try:
+                company = Company.objects.create(name=self.company_name)
+                company_was_created = True
+            except IntegrityError:
+                company = Company.objects.filter(slug=slugify(self.company_name), is_active=True).first()
+                if company is None:
+                    raise ValidationError('Non siamo riusciti a creare lo spazio aziendale. Riprova.')
 
-        user = User.objects.create_user(
-            username=email,
-            email=email,
-            first_name=self.cleaned_data['first_name'].strip(),
-            last_name=self.cleaned_data['last_name'].strip(),
-            password=self.cleaned_data['password1'],
-        )
-        EmployeeProfile.objects.create(
+        try:
+            user = User.objects.create_user(
+                username=email,
+                email=email,
+                first_name=self.cleaned_data['first_name'].strip(),
+                last_name=self.cleaned_data['last_name'].strip(),
+                password=self.cleaned_data['password1'],
+            )
+        except IntegrityError:
+            raise ValidationError('Esiste gia un account con questa email.')
+
+        profile, _ = EmployeeProfile.objects.get_or_create(
             user=user,
-            company=company,
-            is_company_admin=company_was_created,
+            defaults={
+                'company': company,
+                'is_company_admin': company_was_created,
+            },
         )
-        return user
+        return user, profile
 
 
 class ExpenseClaimForm(forms.ModelForm):

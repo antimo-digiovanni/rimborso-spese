@@ -1,6 +1,8 @@
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 
@@ -39,6 +41,35 @@ class RegistrationFlowTests(TestCase):
         profile = EmployeeProfile.objects.get(user__username='sara@example.com')
         self.assertEqual(profile.company, company)
         self.assertFalse(profile.is_company_admin)
+
+    def test_register_shows_form_error_when_save_fails(self):
+        with patch('claims.views.EmployeeRegistrationForm.save', side_effect=ValidationError('Registrazione temporaneamente non disponibile.')):
+            response = self.client.post(reverse('register'), {
+                'company_name': 'Acme Logistics',
+                'first_name': 'Luca',
+                'last_name': 'Bianchi',
+                'email': 'luca2@example.com',
+                'password1': 'SecurePass123!',
+                'password2': 'SecurePass123!',
+            })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Registrazione temporaneamente non disponibile.')
+
+    def test_email_check_is_case_insensitive(self):
+        User.objects.create_user(username='Luca@Example.com', password='SecurePass123!', email='Luca@Example.com')
+
+        response = self.client.post(reverse('register'), {
+            'company_name': 'Acme Logistics',
+            'first_name': 'Luca',
+            'last_name': 'Bianchi',
+            'email': 'luca@example.com',
+            'password1': 'SecurePass123!',
+            'password2': 'SecurePass123!',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Esiste gia un account con questa email.')
 
 
 class ClaimFlowTests(TestCase):

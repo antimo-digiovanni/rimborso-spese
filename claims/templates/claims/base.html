@@ -32,6 +32,7 @@
             <a href="{% url 'profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}">Profilo</a>
             <a href="{% url 'logout' %}">Esci</a>
             {% else %}
+            <button class="button button-ghost" id="installTrigger" type="button">Installa app</button>
             <a href="{% url 'login' %}">Accedi</a>
             <a class="button button-ghost" href="{% url 'register' %}">Registrati</a>
             {% endif %}
@@ -41,10 +42,9 @@
     <main class="page-shell">
         <div class="install-banner" id="installBanner" hidden>
             <div>
-                <strong>Installa l'app</strong>
-                <p>Aggiungi Rimborso spese alla schermata Home del telefono per usarla come una vera app.</p>
+                <strong id="installBannerTitle">Installa l'app</strong>
+                <p id="installBannerText">Aggiungi Rimborso spese alla schermata Home del telefono per usarla come una vera app.</p>
             </div>
-            <button class="button" id="installButton" type="button">Installa</button>
         </div>
         {% if messages %}
         <div class="messages">
@@ -81,21 +81,61 @@
 
         let deferredPrompt = null;
         const installBanner = document.getElementById('installBanner');
-        const installButton = document.getElementById('installButton');
+        const installTrigger = document.getElementById('installTrigger');
+        const installBannerTitle = document.getElementById('installBannerTitle');
+        const installBannerText = document.getElementById('installBannerText');
+
+        function isIosDevice() {
+            return /iPad|iPhone|iPod/.test(window.navigator.userAgent)
+                || (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
+        }
+
+        function isAndroidDevice() {
+            return /Android/i.test(window.navigator.userAgent);
+        }
+
+        function showInstallBanner(title, text) {
+            if (!installBanner || !installBannerTitle || !installBannerText) return;
+            installBannerTitle.textContent = title;
+            installBannerText.textContent = text;
+            installBanner.hidden = false;
+        }
 
         window.addEventListener('beforeinstallprompt', function (event) {
             event.preventDefault();
             deferredPrompt = event;
-            if (installBanner) installBanner.hidden = false;
         });
 
-        if (installButton) {
-            installButton.addEventListener('click', async function () {
-                if (!deferredPrompt) return;
-                deferredPrompt.prompt();
-                await deferredPrompt.userChoice;
-                deferredPrompt = null;
-                installBanner.hidden = true;
+        if (installTrigger) {
+            installTrigger.addEventListener('click', async function () {
+                if (deferredPrompt) {
+                    installBanner.hidden = true;
+                    deferredPrompt.prompt();
+                    await deferredPrompt.userChoice;
+                    deferredPrompt = null;
+                    return;
+                }
+
+                if (isIosDevice()) {
+                    showInstallBanner(
+                        'Installa su iPhone',
+                        'Apri questa pagina in Safari, tocca Condividi e poi scegli Aggiungi a Home.'
+                    );
+                    return;
+                }
+
+                if (isAndroidDevice()) {
+                    showInstallBanner(
+                        'Installa su Android',
+                        'Apri Rimborso spese in Chrome su Android e usa Aggiungi a schermata Home se il prompt non compare subito.'
+                    );
+                    return;
+                }
+
+                showInstallBanner(
+                    'Installazione da mobile',
+                    'L\'installazione rapida e disponibile su Android. Su iPhone usa Safari, poi Condividi e Aggiungi a Home.'
+                );
             });
         }
     </script>
