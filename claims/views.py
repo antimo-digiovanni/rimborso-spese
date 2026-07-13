@@ -18,8 +18,8 @@ from reportlab.lib.units import mm
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfgen import canvas
 
-from .forms import ClaimReviewForm, EmployeeRegistrationForm, ExpenseClaimForm
-from .models import Company, EmployeeProfile, ExpenseClaim
+from .forms import ClaimReviewForm, CompanyBrandingForm, EmployeeRegistrationForm, ExpenseClaimForm
+from .models import Company, EmployeeProfile, ExpenseClaim, ExpenseReceipt
 
 
 logger = logging.getLogger(__name__)
@@ -83,8 +83,8 @@ def manifest(request):
 
 def service_worker(request):
         script = """
-const CACHE_NAME = 'rimborso-spese-v5';
-const APP_SHELL = ['/', '/accedi/', '/registrati/', '/static/claims/app.css?v=20260713c'];
+const CACHE_NAME = 'rimborso-spese-v6';
+const APP_SHELL = ['/', '/accedi/', '/registrati/', '/static/claims/app.css?v=20260713d'];
 const PUBLIC_ROUTES = new Set(['/', '/accedi/', '/registrati/']);
 
 self.addEventListener('install', (event) => {
@@ -134,7 +134,7 @@ def register(request):
         return redirect('dashboard')
 
     if request.method == 'POST':
-        form = EmployeeRegistrationForm(request.POST)
+        form = EmployeeRegistrationForm(request.POST, request.FILES)
         try:
             if form.is_valid():
                 try:
@@ -193,9 +193,19 @@ def dashboard(request):
 @login_required
 def profile(request):
     profile = _get_profile(request.user)
+    if request.method == 'POST':
+        branding_form = CompanyBrandingForm(request.POST, request.FILES, instance=profile.company)
+        if branding_form.is_valid():
+            branding_form.save()
+            messages.success(request, 'Logo aziendale aggiornato.')
+            return redirect('profile')
+    else:
+        branding_form = CompanyBrandingForm(instance=profile.company)
+
     context = {
         'profile': profile,
         'is_company_admin': _user_can_manage_company(profile),
+        'branding_form': branding_form,
     }
     return render(request, 'claims/profile.html', context)
 
@@ -210,6 +220,13 @@ def create_claim(request):
             claim.employee = profile
             claim.company = profile.company
             claim.save()
+            uploaded_receipts = form.cleaned_data.get('receipts', [])
+            for index, receipt_file in enumerate(uploaded_receipts, start=1):
+                ExpenseReceipt.objects.create(
+                    claim=claim,
+                    file=receipt_file,
+                    label=f'Scontrino {index}',
+                )
             messages.success(request, 'Richiesta inviata correttamente.')
             return redirect('claim_detail', claim_id=claim.pk)
     else:
@@ -222,7 +239,7 @@ def create_claim(request):
 def claim_detail(request, claim_id):
     profile = _get_profile(request.user)
     claim = get_object_or_404(
-        ExpenseClaim.objects.select_related('company', 'employee__user'),
+        ExpenseClaim.objects.select_related('company', 'employee__user').prefetch_related('receipts'),
         pk=claim_id,
         employee=profile,
     )
@@ -310,7 +327,8 @@ def claim_pdf_report(request):
             pdf.drawString(width - 20 * mm - amount_width, y_pos - 5 * mm, amount_label)
 
             row_left = f'{claim.category} · {claim.expense_date:%d/%m/%Y} · Stato: {claim.get_status_display()}'
-            row_right = 'Ricevuta allegata' if claim.receipt else 'Nessuna ricevuta'
+            attachment_count = claim.receipts.count() + (1 if claim.receipt else 0)
+            row_right = f'{attachment_count} allegati' if attachment_count else 'Nessuna ricevuta'
             _draw_pdf_row(pdf, y_pos - 11 * mm, row_left, row_right, width)
 
             if claim.description:

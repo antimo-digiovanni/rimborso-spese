@@ -1,3 +1,4 @@
+from io import BytesIO
 from decimal import Decimal
 from unittest.mock import patch
 
@@ -6,8 +7,17 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from PIL import Image
 
-from .models import Company, EmployeeProfile, ExpenseClaim
+from .models import Company, EmployeeProfile, ExpenseClaim, ExpenseReceipt
+
+
+def make_test_image(name='test.png', color='navy'):
+    buffer = BytesIO()
+    image = Image.new('RGB', (8, 8), color=color)
+    image.save(buffer, format='PNG')
+    buffer.seek(0)
+    return SimpleUploadedFile(name, buffer.read(), content_type='image/png')
 
 
 class RegistrationFlowTests(TestCase):
@@ -100,6 +110,21 @@ class RegistrationFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Esiste gia un account con questa email.')
 
+    def test_registration_can_store_company_logo(self):
+        response = self.client.post(reverse('register'), {
+            'company_name': 'Logo Logistics',
+            'first_name': 'Marta',
+            'last_name': 'Riva',
+            'email': 'marta@example.com',
+            'password1': 'SecurePass123!',
+            'password2': 'SecurePass123!',
+            'company_logo': make_test_image('logo.png', color='teal'),
+        })
+
+        self.assertRedirects(response, f"{reverse('login')}?registered=1")
+        company = Company.objects.get(name='Logo Logistics')
+        self.assertTrue(bool(company.logo))
+
 
 class ClaimFlowTests(TestCase):
     def setUp(self):
@@ -140,8 +165,27 @@ class ClaimFlowTests(TestCase):
         response = self.client.get(reverse('claim_detail', args=[claim.id]))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Apri scontrino')
+        self.assertContains(response, 'Scontrino principale')
         self.assertContains(response, 'Parcheggio')
+
+    def test_employee_can_create_claim_with_multiple_receipts(self):
+        self.client.login(username='anna@example.com', password='StrongPass123!')
+        response = self.client.post(reverse('create_claim'), {
+            'title': 'Pranzo e parcheggio',
+            'category': 'Cliente',
+            'description': 'Due spese nella stessa giornata.',
+            'amount': '32.50',
+            'currency': 'EUR',
+            'expense_date': '2026-07-06',
+            'receipts': [
+                make_test_image('scontrino-1.png', color='red'),
+                make_test_image('scontrino-2.png', color='green'),
+            ],
+        })
+
+        claim = ExpenseClaim.objects.get(title='Pranzo e parcheggio')
+        self.assertRedirects(response, reverse('claim_detail', args=[claim.id]))
+        self.assertEqual(ExpenseReceipt.objects.filter(claim=claim).count(), 2)
 
     def test_employee_can_download_claim_pdf_report(self):
         ExpenseClaim.objects.create(
@@ -167,6 +211,16 @@ class ClaimFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Scarica PDF del mese')
         self.assertNotContains(response, 'Uso rapido da cellulare')
+
+    def test_employee_can_update_company_logo_from_profile(self):
+        self.client.login(username='anna@example.com', password='StrongPass123!')
+        response = self.client.post(reverse('profile'), {
+            'logo': make_test_image('updated-logo.png', color='purple'),
+        })
+
+        self.assertRedirects(response, reverse('profile'))
+        self.company.refresh_from_db()
+        self.assertTrue(bool(self.company.logo))
 
     def test_company_admin_can_review_claim_for_own_company(self):
         manager = User.objects.create_user(username='manager@example.com', password='StrongPass123!', email='manager@example.com')

@@ -9,13 +9,16 @@
         <h1>Registrazione dipendente</h1>
         <p class="hero-copy">Inserisci il tuo nome, la tua email di lavoro e il nome dell'azienda. Se l'azienda non esiste ancora, apriamo subito uno spazio di prova.</p>
     </div>
-    <form method="post" class="stack-lg">
+    <form method="post" enctype="multipart/form-data" class="stack-lg">
         {% csrf_token %}
         {% for field in form %}
         <div class="field">
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
             {{ field }}
             {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+            {% if field.name == 'company_logo' %}
+            <div class="image-preview-grid" id="registerLogoPreview" hidden></div>
+            {% endif %}
             {% for error in field.errors %}<div class="error">{{ error }}</div>{% endfor %}
         </div>
         {% endfor %}
@@ -30,4 +33,31 @@
         <a href="{% url 'login' %}">Accedi</a>
     </div>
 </section>
+<script>
+    (function () {
+        const input = document.querySelector('[data-company-logo-input="true"], #id_company_logo');
+        const preview = document.getElementById('registerLogoPreview');
+
+        if (!input || !preview) return;
+
+        input.addEventListener('change', function () {
+            preview.innerHTML = '';
+            preview.hidden = true;
+            const file = input.files && input.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'image-preview-card';
+            const img = document.createElement('img');
+            img.alt = 'Anteprima logo aziendale';
+            img.src = URL.createObjectURL(file);
+            const caption = document.createElement('span');
+            caption.textContent = file.name;
+            wrapper.appendChild(img);
+            wrapper.appendChild(caption);
+            preview.appendChild(wrapper);
+            preview.hidden = false;
+        });
+    }());
+</script>
 {% endblock %}

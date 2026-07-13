@@ -16,6 +16,7 @@ class Company(models.Model):
     name = models.CharField(max_length=160)
     slug = models.SlugField(max_length=180, unique=True)
     invite_code = models.CharField(max_length=20, unique=True, default=generate_invite_code)
+    logo = models.ImageField(upload_to='company-logos/', blank=True)
     is_active = models.BooleanField(default=True)
     allow_self_registration = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -96,3 +97,25 @@ class ExpenseClaim(models.Model):
 
     def get_absolute_url(self):
         return reverse('claim_detail', args=[self.pk])
+
+    @property
+    def all_receipts(self):
+        extra_receipts = list(self.receipts.all())
+        if self.receipt:
+            return [{'label': 'Scontrino principale', 'url': self.receipt.url, 'is_legacy': True}] + [
+                {'label': item.label, 'url': item.file.url, 'is_legacy': False} for item in extra_receipts
+            ]
+        return [{'label': item.label, 'url': item.file.url, 'is_legacy': False} for item in extra_receipts]
+
+
+class ExpenseReceipt(models.Model):
+    claim = models.ForeignKey(ExpenseClaim, on_delete=models.CASCADE, related_name='receipts')
+    file = models.FileField(upload_to='receipts/%Y/%m/')
+    label = models.CharField(max_length=120, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['uploaded_at', 'id']
+
+    def __str__(self):
+        return self.label or self.file.name.rsplit('/', 1)[-1]

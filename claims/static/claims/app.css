@@ -574,6 +574,55 @@ img {
     min-height: 44px;
 }
 
+.image-preview-grid,
+.attachment-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.image-preview-card,
+.attachment-chip,
+.company-logo-block {
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.image-preview-card {
+    width: 132px;
+    padding: 10px;
+}
+
+.image-preview-card img,
+.company-logo-preview {
+    width: 100%;
+    height: 96px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 8px;
+}
+
+.image-preview-card span {
+    display: block;
+    color: var(--muted);
+    font-size: 0.82rem;
+    word-break: break-word;
+}
+
+.attachment-chip {
+    padding: 10px 14px;
+    color: var(--text-strong);
+    font-weight: 700;
+}
+
+.company-logo-block {
+    max-width: 220px;
+    padding: 12px;
+    margin-top: 10px;
+}
+
 .detail-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

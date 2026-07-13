@@ -14,7 +14,7 @@
         {% for field in form %}
         <div class="field">
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {% if field.name == 'receipt' %}
+            {% if field.name == 'receipts' %}
             <div class="receipt-actions">
                 <button class="button button-ghost" type="button" data-receipt-mode="file">Allega file</button>
                 <button class="button" type="button" data-receipt-mode="camera">Scatta scontrino</button>
@@ -22,6 +22,9 @@
             <small>Su telefono puoi aprire direttamente la fotocamera posteriore per fotografare lo scontrino.</small>
             {% endif %}
             {{ field }}
+            {% if field.name == 'receipts' %}
+            <div class="image-preview-grid" id="receiptPreview" hidden></div>
+            {% endif %}
             {% for error in field.errors %}<div class="error">{{ error }}</div>{% endfor %}
         </div>
         {% endfor %}
@@ -41,12 +44,41 @@
                 if (button.dataset.receiptMode === 'camera') {
                     receiptInput.setAttribute('accept', 'image/*');
                     receiptInput.setAttribute('capture', 'environment');
+                    receiptInput.removeAttribute('multiple');
                 } else {
                     receiptInput.setAttribute('accept', 'image/*,application/pdf');
                     receiptInput.removeAttribute('capture');
+                    receiptInput.setAttribute('multiple', 'multiple');
                 }
                 receiptInput.click();
             });
+        });
+
+        const preview = document.getElementById('receiptPreview');
+
+        receiptInput.addEventListener('change', function () {
+            if (!preview) return;
+            preview.innerHTML = '';
+            preview.hidden = true;
+            const files = Array.from(receiptInput.files || []);
+            if (!files.length) return;
+
+            files.forEach((file) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'image-preview-card';
+                if (file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.alt = file.name;
+                    img.src = URL.createObjectURL(file);
+                    wrapper.appendChild(img);
+                }
+                const caption = document.createElement('span');
+                caption.textContent = file.name;
+                wrapper.appendChild(caption);
+                preview.appendChild(wrapper);
+            });
+
+            preview.hidden = false;
         });
     }());
 </script>

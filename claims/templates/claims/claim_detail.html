@@ -32,18 +32,22 @@
             <div class="detail-value">{{ claim.description|default:'Nessuna descrizione inserita.' }}</div>
         </article>
         <article class="mini-card detail-card full">
-            <strong>Scontrino o ricevuta</strong>
+            <strong>Scontrini e ricevute</strong>
             <div class="detail-value">
-                {% if claim.receipt %}
-                File presente e pronto da aprire.
+                {% if claim.all_receipts %}
+                {{ claim.all_receipts|length }} file pronti da aprire.
                 {% else %}
                 Nessun file allegato per questa richiesta.
                 {% endif %}
             </div>
+            {% if claim.all_receipts %}
+            <div class="attachment-list">
+                {% for receipt in claim.all_receipts %}
+                <a class="attachment-chip" href="{{ receipt.url }}" target="_blank" rel="noopener">{{ receipt.label }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
             <div class="detail-actions">
-                {% if claim.receipt %}
-                <a class="button" href="{{ claim.receipt.url }}" target="_blank" rel="noopener">Apri scontrino</a>
-                {% endif %}
                 <a class="button button-ghost" href="{% url 'claim_pdf_report' %}?month={{ claim.expense_date|date:'Y-m' }}">PDF del mese</a>
                 <a class="button button-ghost" href="{% url 'dashboard' %}">Torna alla bacheca</a>
             </div>

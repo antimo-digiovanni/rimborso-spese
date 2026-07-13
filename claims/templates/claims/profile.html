@@ -16,6 +16,16 @@
             <p>{{ profile.company.name }}</p>
         </div>
         <div class="info-card">
+            <strong>Logo aziendale</strong>
+            {% if profile.company.logo %}
+            <div class="company-logo-block">
+                <img class="company-logo-preview" src="{{ profile.company.logo.url }}" alt="Logo {{ profile.company.name }}">
+            </div>
+            {% else %}
+            <p>Nessun logo caricato finora.</p>
+            {% endif %}
+        </div>
+        <div class="info-card">
             <strong>Email</strong>
             <p>{{ request.user.email }}</p>
         </div>
@@ -29,6 +39,23 @@
         Installa l'app sul telefono da browser compatibili con il pulsante Installa oppure, su iPhone, usa Condividi → Aggiungi a Home.
     </div>
 
+    <form method="post" enctype="multipart/form-data" class="stack-lg">
+        {% csrf_token %}
+        <div class="info-card">
+            <strong>Aggiorna logo aziendale</strong>
+            {% for field in branding_form %}
+            <div class="field">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                <div class="image-preview-grid" id="profileLogoPreview" hidden></div>
+                {% for error in field.errors %}<div class="error">{{ error }}</div>{% endfor %}
+            </div>
+            {% endfor %}
+            <button class="button" type="submit">Salva logo</button>
+        </div>
+    </form>
+
     {% if is_company_admin %}
     <div class="admin-pocket">
         <strong>Area azienda</strong>
@@ -37,4 +64,31 @@
     </div>
     {% endif %}
 </section>
+<script>
+    (function () {
+        const input = document.querySelector('[data-company-logo-input="true"]');
+        const preview = document.getElementById('profileLogoPreview');
+
+        if (!input || !preview) return;
+
+        input.addEventListener('change', function () {
+            preview.innerHTML = '';
+            preview.hidden = true;
+            const file = input.files && input.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'image-preview-card';
+            const img = document.createElement('img');
+            img.alt = 'Anteprima nuovo logo aziendale';
+            img.src = URL.createObjectURL(file);
+            const caption = document.createElement('span');
+            caption.textContent = file.name;
+            wrapper.appendChild(img);
+            wrapper.appendChild(caption);
+            preview.appendChild(wrapper);
+            preview.hidden = false;
+        });
+    }());
+</script>
 {% endblock %}

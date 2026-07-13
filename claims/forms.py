@@ -5,7 +5,23 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.utils.text import slugify
 
-from .models import Company, EmployeeProfile, ExpenseClaim
+from .models import Company, EmployeeProfile, ExpenseClaim, ExpenseReceipt
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    widget = MultipleFileInput
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if not data:
+            return []
+        if isinstance(data, (list, tuple)):
+            return [single_file_clean(item, initial) for item in data]
+        return [single_file_clean(data, initial)]
 
 
 class EmployeeRegistrationForm(forms.Form):
@@ -17,6 +33,11 @@ class EmployeeRegistrationForm(forms.Form):
     first_name = forms.CharField(label='Nome', max_length=150)
     last_name = forms.CharField(label='Cognome', max_length=150)
     email = forms.EmailField(label='Email di lavoro')
+    company_logo = forms.ImageField(
+        label='Logo azienda',
+        required=False,
+        help_text='Facoltativo. Se lo carichi, verra mostrato come logo condiviso della tua azienda.',
+    )
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
     password2 = forms.CharField(label='Conferma password', widget=forms.PasswordInput)
 
@@ -54,15 +75,19 @@ class EmployeeRegistrationForm(forms.Form):
         email = self.cleaned_data['email']
         company = self.company
         company_was_created = False
+        company_logo = self.cleaned_data.get('company_logo')
 
         if company is None:
             try:
-                company = Company.objects.create(name=self.company_name)
+                company = Company.objects.create(name=self.company_name, logo=company_logo)
                 company_was_created = True
             except IntegrityError:
                 company = Company.objects.filter(slug=slugify(self.company_name), is_active=True).first()
                 if company is None:
                     raise ValidationError('Non siamo riusciti a creare lo spazio aziendale. Riprova.')
+        elif company_logo:
+            company.logo = company_logo
+            company.save(update_fields=['logo'])
 
         try:
             user = User.objects.create_user(
@@ -86,9 +111,15 @@ class EmployeeRegistrationForm(forms.Form):
 
 
 class ExpenseClaimForm(forms.ModelForm):
+    receipts = MultipleFileField(
+        label='Scontrini e ricevute',
+        required=False,
+        help_text='Puoi selezionare piu immagini o PDF insieme.',
+    )
+
     class Meta:
         model = ExpenseClaim
-        fields = ['title', 'category', 'description', 'amount', 'currency', 'expense_date', 'receipt']
+        fields = ['title', 'category', 'description', 'amount', 'currency', 'expense_date']
         labels = {
             'title': 'Titolo',
             'category': 'Categoria',
@@ -96,7 +127,6 @@ class ExpenseClaimForm(forms.ModelForm):
             'amount': 'Importo',
             'currency': 'Valuta',
             'expense_date': 'Data spesa',
-            'receipt': 'Ricevuta',
         }
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
@@ -107,9 +137,29 @@ class ExpenseClaimForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs.setdefault('class', 'form-input')
-        self.fields['receipt'].widget.attrs.update({
+        self.fields['receipts'].widget.attrs.update({
             'accept': 'image/*,application/pdf',
             'data-receipt-input': 'true',
+            'multiple': True,
+        })
+
+
+class CompanyBrandingForm(forms.ModelForm):
+    class Meta:
+        model = Company
+        fields = ['logo']
+        labels = {
+            'logo': 'Logo azienda',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['logo'].required = False
+        self.fields['logo'].help_text = 'Il logo aggiornato verra mostrato a tutti i dipendenti della stessa azienda.'
+        self.fields['logo'].widget.attrs.update({
+            'class': 'form-input',
+            'accept': 'image/*',
+            'data-company-logo-input': 'true',
         })
 
 
