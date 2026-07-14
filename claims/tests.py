@@ -222,6 +222,25 @@ class ClaimFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(draw_image_mock.called)
 
+    def test_claim_pdf_report_draws_company_logo_in_header(self):
+        self.company.logo = make_test_image('company-logo.png', color='blue')
+        self.company.save(update_fields=['logo'])
+        ExpenseClaim.objects.create(
+            company=self.company,
+            employee=self.profile,
+            title='Treno',
+            category='Trasferta',
+            amount=Decimal('18.00'),
+            expense_date='2026-07-09',
+        )
+
+        self.client.login(username='anna@example.com', password='StrongPass123!')
+        with patch('claims.views._draw_company_logo') as draw_logo_mock:
+            response = self.client.get(reverse('claim_pdf_report'), {'month': '2026-07'})
+
+        self.assertEqual(response.status_code, 200)
+        draw_logo_mock.assert_called()
+
     def test_employee_can_delete_own_claim(self):
         claim = ExpenseClaim.objects.create(
             company=self.company,

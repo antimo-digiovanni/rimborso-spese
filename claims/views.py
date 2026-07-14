@@ -311,9 +311,35 @@ def _draw_pdf_row(pdf, y_pos, left_text, right_text, width):
     pdf.drawString(width - 18 * mm - right_width, y_pos, right_text)
 
 
+def _draw_company_logo(pdf, width, height, company):
+    if not company.logo:
+        return
+
+    try:
+        company.logo.open('rb')
+        image = ImageReader(company.logo.file)
+        image_width, image_height = image.getSize()
+        max_width = 28 * mm
+        max_height = 18 * mm
+        scale = min(max_width / image_width, max_height / image_height)
+        draw_width = image_width * scale
+        draw_height = image_height * scale
+        x_pos = width - 18 * mm - draw_width
+        y_pos = height - 25 * mm - (draw_height / 2)
+        pdf.drawImage(image, x_pos, y_pos, width=draw_width, height=draw_height, preserveAspectRatio=True, mask='auto')
+    except Exception:
+        logger.exception('Unable to draw company logo in PDF header.')
+    finally:
+        try:
+            company.logo.close()
+        except Exception:
+            pass
+
+
 def _draw_pdf_header(pdf, width, height, profile, month_value, total_amount):
     pdf.setFillColor(colors.HexColor('#0b3654'))
     pdf.rect(0, height - 34 * mm, width, 34 * mm, fill=1, stroke=0)
+    _draw_company_logo(pdf, width, height, profile.company)
     pdf.setFillColor(colors.white)
     pdf.setFont('Helvetica-Bold', 18)
     pdf.drawString(18 * mm, height - 20 * mm, 'Report rimborsi spese')
@@ -338,6 +364,7 @@ def _draw_pdf_receipt_page(pdf, width, height, claim, receipt_label, receipt_fil
     pdf.showPage()
     pdf.setFillColor(colors.HexColor('#0b3654'))
     pdf.rect(0, height - 30 * mm, width, 30 * mm, fill=1, stroke=0)
+    _draw_company_logo(pdf, width, height, claim.company)
     pdf.setFillColor(colors.white)
     pdf.setFont('Helvetica-Bold', 16)
     pdf.drawString(18 * mm, height - 18 * mm, 'Scontrino allegato')
