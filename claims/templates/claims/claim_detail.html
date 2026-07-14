@@ -50,6 +50,10 @@
             <div class="detail-actions">
                 <a class="button button-ghost" href="{% url 'claim_pdf_report' %}?month={{ claim.expense_date|date:'Y-m' }}">PDF del mese</a>
                 <a class="button button-ghost" href="{% url 'dashboard' %}">Torna alla bacheca</a>
+                <form method="post" action="{% url 'delete_claim' claim.id %}" class="inline-action-form" onsubmit="return confirm('Vuoi cancellare questa operazione?');">
+                    {% csrf_token %}
+                    <button class="button button-ghost button-danger" type="submit">Cancella operazione</button>
+                </form>
             </div>
         </article>
     </div>

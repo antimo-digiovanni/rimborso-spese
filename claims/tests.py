@@ -204,6 +204,42 @@ class ClaimFlowTests(TestCase):
         self.assertEqual(response['Content-Type'], 'application/pdf')
         self.assertIn('attachment; filename="rimborsi-2026-07.pdf"', response['Content-Disposition'])
 
+    def test_claim_pdf_report_draws_uploaded_receipt_images(self):
+        claim = ExpenseClaim.objects.create(
+            company=self.company,
+            employee=self.profile,
+            title='Cena cliente',
+            category='Cliente',
+            amount=Decimal('38.00'),
+            expense_date='2026-07-07',
+        )
+        ExpenseReceipt.objects.create(claim=claim, file=make_test_image('receipt-image.png', color='orange'), label='Ricevuta cena')
+
+        self.client.login(username='anna@example.com', password='StrongPass123!')
+        with patch('claims.views.canvas.Canvas.drawImage') as draw_image_mock:
+            response = self.client.get(reverse('claim_pdf_report'), {'month': '2026-07'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(draw_image_mock.called)
+
+    def test_employee_can_delete_own_claim(self):
+        claim = ExpenseClaim.objects.create(
+            company=self.company,
+            employee=self.profile,
+            title='Parcheggio da cancellare',
+            category='Trasferta',
+            amount=Decimal('8.50'),
+            expense_date='2026-07-08',
+        )
+        ExpenseReceipt.objects.create(claim=claim, file=make_test_image('delete-me.png', color='yellow'), label='Scontrino')
+
+        self.client.login(username='anna@example.com', password='StrongPass123!')
+        response = self.client.post(reverse('delete_claim', args=[claim.id]))
+
+        self.assertRedirects(response, reverse('dashboard'))
+        self.assertFalse(ExpenseClaim.objects.filter(pk=claim.pk).exists())
+        self.assertEqual(ExpenseReceipt.objects.count(), 0)
+
     def test_dashboard_shows_pdf_export_and_not_quick_mobile_panel(self):
         self.client.login(username='anna@example.com', password='StrongPass123!')
         response = self.client.get(reverse('dashboard'))

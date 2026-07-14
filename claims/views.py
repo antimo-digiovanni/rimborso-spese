@@ -1,4 +1,5 @@
 import logging
+import os
 from datetime import datetime
 from io import BytesIO
 
@@ -17,6 +18,7 @@ from django.views.decorators.cache import never_cache
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfgen import canvas
 
@@ -250,6 +252,31 @@ def claim_detail(request, claim_id):
     return render(request, 'claims/claim_detail.html', {'claim': claim, 'profile': profile})
 
 
+@login_required
+def delete_claim(request, claim_id):
+    profile = _get_profile(request.user)
+    claim = get_object_or_404(
+        ExpenseClaim.objects.select_related('company', 'employee__user').prefetch_related('receipts'),
+        pk=claim_id,
+        employee=profile,
+    )
+
+    if request.method != 'POST':
+        return redirect('claim_detail', claim_id=claim.pk)
+
+    for receipt in claim.receipts.all():
+        if receipt.file:
+            receipt.file.delete(save=False)
+
+    if claim.receipt:
+        claim.receipt.delete(save=False)
+
+    claim_title = claim.title
+    claim.delete()
+    messages.success(request, f'Operazione "{claim_title}" cancellata.')
+    return redirect('dashboard')
+
+
 def _claim_report_label(month_value):
     if not month_value:
         return 'storico completo'
@@ -282,6 +309,59 @@ def _draw_pdf_header(pdf, width, height, profile, month_value, total_amount):
     pdf.drawRightString(width - 18 * mm, height - 42 * mm, f'Totale: {total_amount:.2f} EUR')
 
 
+def _iter_claim_receipt_files(claim):
+    if claim.receipt:
+        yield 'Scontrino principale', claim.receipt
+
+    for index, receipt in enumerate(claim.receipts.all(), start=1):
+        yield receipt.label or f'Scontrino {index}', receipt.file
+
+
+def _draw_pdf_receipt_page(pdf, width, height, claim, receipt_label, receipt_file, receipt_index, receipt_total):
+    pdf.showPage()
+    pdf.setFillColor(colors.HexColor('#0b3654'))
+    pdf.rect(0, height - 30 * mm, width, 30 * mm, fill=1, stroke=0)
+    pdf.setFillColor(colors.white)
+    pdf.setFont('Helvetica-Bold', 16)
+    pdf.drawString(18 * mm, height - 18 * mm, 'Scontrino allegato')
+    pdf.setFont('Helvetica', 10)
+    pdf.drawString(18 * mm, height - 25 * mm, f'{claim.title} · {receipt_index}/{receipt_total}')
+
+    pdf.setFillColor(colors.HexColor('#16384d'))
+    pdf.setFont('Helvetica-Bold', 12)
+    pdf.drawString(18 * mm, height - 40 * mm, receipt_label)
+    pdf.setFont('Helvetica', 10)
+    pdf.drawString(18 * mm, height - 47 * mm, f'File: {os.path.basename(receipt_file.name)}')
+
+    available_width = width - 36 * mm
+    available_height = height - 78 * mm
+    bottom_margin = 18 * mm
+
+    try:
+        receipt_file.open('rb')
+        image = ImageReader(receipt_file.file)
+        image_width, image_height = image.getSize()
+        scale = min(available_width / image_width, available_height / image_height)
+        draw_width = image_width * scale
+        draw_height = image_height * scale
+        x_pos = (width - draw_width) / 2
+        y_pos = bottom_margin + ((available_height - draw_height) / 2)
+
+        pdf.setStrokeColor(colors.HexColor('#8aa8b7'))
+        pdf.roundRect(16 * mm, bottom_margin - 4 * mm, width - 32 * mm, available_height + 8 * mm, 4 * mm, stroke=1, fill=0)
+        pdf.drawImage(image, x_pos, y_pos, width=draw_width, height=draw_height, preserveAspectRatio=True, mask='auto')
+    except Exception:
+        pdf.setFont('Helvetica', 11)
+        pdf.setFillColor(colors.HexColor('#355467'))
+        pdf.drawString(18 * mm, height - 62 * mm, 'Questo allegato non puo essere incorporato come immagine nel PDF.')
+        pdf.drawString(18 * mm, height - 69 * mm, 'Aprilo dalla richiesta nell app per visualizzarlo integralmente.')
+    finally:
+        try:
+            receipt_file.close()
+        except Exception:
+            pass
+
+
 @login_required
 def claim_pdf_report(request):
     profile = _get_profile(request.user)
@@ -296,13 +376,16 @@ def claim_pdf_report(request):
             return redirect('dashboard')
         claims = claims.filter(expense_date__year=month_start.year, expense_date__month=month_start.month)
 
-    claims = claims.order_by('-expense_date', '-submitted_at')
+    claims = list(claims.order_by('-expense_date', '-submitted_at').prefetch_related('receipts'))
     total_amount = claims.aggregate(
         total=Coalesce(
             Sum('amount'),
             Value(0, output_field=DecimalField(max_digits=10, decimal_places=2)),
         )
-    )['total']
+    )['total'] if hasattr(claims, 'aggregate') else sum((claim.amount for claim in claims), start=0)
+
+    if not hasattr(total_amount, 'quantize'):
+        total_amount = sum((claim.amount for claim in claims), start=0)
 
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
@@ -345,6 +428,14 @@ def claim_pdf_report(request):
                 pdf.drawString(20 * mm, y_pos - 15 * mm, claim.description[:105])
 
             y_pos -= 24 * mm
+
+        receipt_pages = [
+            (claim, receipt_label, receipt_file)
+            for claim in claims
+            for receipt_label, receipt_file in _iter_claim_receipt_files(claim)
+        ]
+        for receipt_index, (claim, receipt_label, receipt_file) in enumerate(receipt_pages, start=1):
+            _draw_pdf_receipt_page(pdf, width, height, claim, receipt_label, receipt_file, receipt_index, len(receipt_pages))
 
     pdf.save()
     buffer.seek(0)

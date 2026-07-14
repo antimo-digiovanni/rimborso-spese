@@ -325,6 +325,11 @@ img {
     box-shadow: none;
 }
 
+.button-danger {
+    color: var(--danger);
+    border-color: rgba(255, 154, 163, 0.38);
+}
+
 .stats-card,
 .panel {
     padding: 26px;
@@ -646,6 +651,10 @@ img {
 
 .detail-actions {
     margin-top: 24px;
+}
+
+.inline-action-form {
+    display: inline-flex;
 }
 
 .status {
