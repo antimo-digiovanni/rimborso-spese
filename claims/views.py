@@ -3,17 +3,19 @@ import os
 from datetime import datetime
 from io import BytesIO
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import ValidationError
-from django.http import HttpResponse
+from django.http import FileResponse, Http404, HttpResponse
 from django.db import DatabaseError
 from django.db.models import Count, DecimalField, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.utils._os import safe_join
 from django.views.decorators.cache import never_cache
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -36,6 +38,21 @@ class EmployeeLoginView(LoginView):
 
 class EmployeeLogoutView(LogoutView):
     next_page = 'home'
+
+
+def media_file(request, path):
+    if settings.USE_S3_MEDIA:
+        raise Http404()
+
+    try:
+        full_path = safe_join(str(settings.MEDIA_ROOT), path)
+    except ValueError as exc:
+        raise Http404() from exc
+
+    if not os.path.exists(full_path) or not os.path.isfile(full_path):
+        raise Http404()
+
+    return FileResponse(open(full_path, 'rb'))
 
 
 def home(request):
